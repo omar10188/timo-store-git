@@ -1,22 +1,31 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middleware/authMiddleware");
-const { admin } = require("../middleware/adminMiddleware");
+const { protect, admin } = require("../middleware/authMiddleware");
 const {
-  validateCoupon,
-  getCoupons,
   createCoupon,
+  getCoupons,
+  getCouponById,
   updateCoupon,
   deleteCoupon,
+  validateCoupon,
 } = require("../controllers/couponController");
 
-// Validate coupon (any logged-in user)
-router.post("/validate", protect, validateCoupon);
+// All routes require authentication
+router.use(protect);
 
-// Admin-only coupon management
-router.get("/", protect, admin, getCoupons);
-router.post("/", protect, admin, createCoupon);
-router.put("/:id", protect, admin, updateCoupon);
-router.delete("/:id", protect, admin, deleteCoupon);
+// User validation route
+router.post("/validate", validateCoupon);
+
+// Admin only routes
+router.use(admin);
+
+router.route("/")
+  .post(createCoupon)
+  .get(getCoupons);
+
+router.route("/:id")
+  .get(getCouponById)
+  .put(updateCoupon)
+  .delete(deleteCoupon);
 
 module.exports = router;

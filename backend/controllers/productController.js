@@ -7,13 +7,27 @@ const asyncHandler = require("../middleware/asyncHandler");
 const createProduct = asyncHandler(async (req, res, next) => {
   const { name, description, price, category, brand, stock, isFeatured } = req.body;
 
-  if (!name || !description || !price || !category || !brand) {
-    const error = new Error("Please provide all required product fields");
-    error.statusCode = 400;
-    return next(error);
+  const requiredFields = ["name", "description", "price", "category", "brand"];
+  const missingFields = requiredFields.filter(field => !req.body[field]);
+
+  if (missingFields.length > 0) {
+    return res.status(400).json({
+      message: `Missing required fields: ${missingFields.join(", ")}`,
+      missing: missingFields
+    });
   }
 
-  const images = req.files ? req.files.map((file) => `/uploads/${file.filename}`) : [];
+  let uploadedImages = req.files && req.files.length > 0 
+    ? req.files.map((file) => `/uploads/products/${file.filename}`) // Update to products subfolder if uploaded directly here, but keeping old logic works too. Actually wait, productRoutes uses standard /uploads/. We'll just leave this as is for standard uploads.
+    : [];
+  
+  if (req.files && req.files.length > 0) {
+    uploadedImages = req.files.map((file) => `/uploads/${file.filename}`);
+  }
+
+  const existingImage = req.body.image || "";
+  const finalImage = uploadedImages[0] || existingImage || "";
+  const finalImagesArray = uploadedImages.length > 0 ? uploadedImages : (existingImage ? [existingImage] : []);
 
   const product = await Product.create({
     name,
@@ -23,8 +37,8 @@ const createProduct = asyncHandler(async (req, res, next) => {
     brand,
     stock: Number(stock || 0),
     isFeatured: isFeatured === "true" || isFeatured === true,
-    images,
-    image: images[0] || "",
+    images: finalImagesArray,
+    image: finalImage,
   });
 
   res.status(201).json(product);
@@ -100,10 +114,25 @@ const updateProduct = asyncHandler(async (req, res, next) => {
     return next(error);
   }
 
+  let uploadedImages = [];
+  if (req.files && req.files.length > 0) {
+    uploadedImages = req.files.map((file) => `/uploads/${file.filename}`);
+  }
+
+  const existingImage = req.body.image || "";
+
+  // If new files were uploaded, use them. 
+  // Otherwise, if an existingImage string was provided, use that.
+  // Otherwise, fallback to the product's current images.
+  const finalImage = uploadedImages.length > 0 
+    ? uploadedImages[0] 
+    : (existingImage ? existingImage : product.image);
+    
+  const finalImagesArray = uploadedImages.length > 0 
+    ? uploadedImages 
+    : (existingImage ? [existingImage] : product.images);
+
   const { name, description, price, category, brand, stock, isFeatured } = req.body;
-  const images = req.files && req.files.length > 0
-    ? req.files.map((file) => `/uploads/${file.filename}`)
-    : product.images;
 
   product.name = name || product.name;
   product.description = description || product.description;
@@ -111,12 +140,16 @@ const updateProduct = asyncHandler(async (req, res, next) => {
   product.category = category || product.category;
   product.brand = brand || product.brand;
   product.stock = stock ? Number(stock) : product.stock;
-  product.isFeatured = isFeatured === undefined ? product.isFeatured : isFeatured === "true" || isFeatured === true;
-  product.images = images;
-  if (images.length) product.image = images[0];
+  
+  if (isFeatured !== undefined) {
+    product.isFeatured = isFeatured === "true" || isFeatured === true;
+  }
+  
+  product.images = finalImagesArray;
+  product.image = finalImage;
 
-  const updated = await product.save();
-  res.json(updated);
+  const updatedProduct = await product.save();
+  res.json(updatedProduct);
 });
 
 // @desc    Delete a product
@@ -135,10 +168,64 @@ const deleteProduct = asyncHandler(async (req, res, next) => {
   res.json({ message: "Product removed successfully" });
 });
 
+// @desc    Get trending products
+// @route   GET /api/products/trending
+// @access  Public
+const getTrendingProducts = asyncHandler(async (req, res, next) => {
+  // Simple algorithm: highest rating + most reviews (or just a mix)
+  // To keep it fast, we'll sort by rating desc, numReviews desc and limit to 8
+  const products = await Product.find({})
+    .sort({ rating: -1, numReviews: -1 })
+    .limit(8)
+    .populate("category", "name slug")
+    .lean();
+
+  res.json(products);
+});
+
+// @desc    Get related products based on category
+// @route   GET /api/products/:id/recommendations
+// @access  Public
+const getRelatedProducts = asyncHandler(async (req, res, next) => {
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    const error = new Error("Product not found");
+    error.statusCode = 404;
+    return next(error);
+  }
+
+  // Find products in the same category, excluding the current one
+  let relatedProducts = await Product.find({
+    category: product.category,
+    _id: { $ne: product._id },
+  })
+    .limit(4)
+    .populate("category", "name slug")
+    .lean();
+
+  // If not enough related products, fetch some top rated to fill the gap
+  if (relatedProducts.length < 4) {
+    const topRated = await Product.find({
+      _id: { $ne: product._id, $nin: relatedProducts.map((p) => p._id) },
+    })
+      .sort({ rating: -1 })
+      .limit(4 - relatedProducts.length)
+      .populate("category", "name slug")
+      .lean();
+    
+    relatedProducts = [...relatedProducts, ...topRated];
+  }
+
+  res.json(relatedProducts);
+});
+
 module.exports = {
   createProduct,
   getProducts,
   getProductById,
   updateProduct,
   deleteProduct,
+  getTrendingProducts,
+  getRelatedProducts,
 };

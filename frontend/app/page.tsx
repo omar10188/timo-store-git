@@ -26,19 +26,22 @@ export default function HomePage() {
   const [featured, setFeatured] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
+  const [trending, setTrending] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [featuredRes, categoriesRes, newRes] = await Promise.all([
+        const [featuredRes, categoriesRes, newRes, trendingRes] = await Promise.all([
           productsAPI.getAll({ isFeatured: 'true', limit: 4 }),
           categoriesAPI.getAll(),
           productsAPI.getAll({ limit: 8, sort: 'newest' }),
+          productsAPI.getTrending(),
         ]);
         setFeatured(featuredRes.data.products || []);
         setCategories(categoriesRes.data || []);
         setNewArrivals(newRes.data.products || []);
+        setTrending(trendingRes.data || []);
       } catch (err) {
         console.error('Failed to load homepage data:', err);
       } finally {
@@ -49,56 +52,113 @@ export default function HomePage() {
   }, []);
 
   return (
-    <>
+    <div className="transition-colors duration-500">
       {/* ── Hero Section ─────────────────────────────────────────────── */}
-      <section style={{
-        minHeight: '90vh',
-        display: 'flex', alignItems: 'center',
-        position: 'relative', overflow: 'hidden',
-        background: 'radial-gradient(ellipse at 70% 50%, rgba(212,168,83,0.08) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(212,168,83,0.05) 0%, transparent 50%)',
-      }}>
+      <section
+        className="relative min-h-[90vh] flex items-center overflow-hidden"
+        style={{
+          background: 'radial-gradient(ellipse at 70% 50%, var(--color-gold-muted) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, var(--color-gold-muted) 0%, transparent 50%)',
+        }}
+      >
         {/* Decorative orbs */}
-        <div style={{ position: 'absolute', top: '10%', right: '5%', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,168,83,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '0', left: '-10%', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,168,83,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div
+          className="absolute top-[10%] right-[5%] w-[600px] h-[600px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, var(--color-gold-muted) 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute bottom-0 left-[-10%] w-[400px] h-[400px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, var(--color-gold-muted) 0%, transparent 70%)' }}
+        />
 
-        <div className="container">
-          <div style={{ maxWidth: '620px', animation: 'fadeIn 0.8s ease' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-gold-muted)', border: '1px solid var(--color-border-gold)', borderRadius: 'var(--radius-full)', padding: '0.4rem 1rem', marginBottom: '1.5rem' }}>
-              <Sparkles size={14} color="var(--color-gold)" />
-              <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>New Collection 2025</span>
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="max-w-[620px] animate-fade-in">
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
+              style={{
+                background: 'var(--color-gold-muted)',
+                border: '1px solid var(--color-border-gold)',
+              }}
+            >
+              <Sparkles size={14} style={{ color: 'var(--color-gold)' }} />
+              <span
+                className="text-xs font-bold tracking-[0.08em] uppercase"
+                style={{ color: 'var(--color-gold)' }}
+              >
+                New Collection 2025
+              </span>
             </div>
 
-            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', lineHeight: 1.1, marginBottom: '1.5rem', fontWeight: 700 }}>
+            <h1
+              className="font-serif text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.1] mb-6 font-bold"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
               Discover Your
               <br />
-              <span className="text-gold">Signature Scent</span>
+              <span
+                className="bg-clip-text text-transparent"
+                style={{ backgroundImage: 'linear-gradient(135deg, var(--color-gold-light), var(--color-gold-dark))' }}
+              >
+                Signature Scent
+              </span>
             </h1>
 
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.1rem', lineHeight: 1.7, marginBottom: '2.5rem', maxWidth: '500px' }}>
+            <p
+              className="text-lg leading-relaxed mb-10 max-w-[500px]"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
               Explore an exclusive collection of luxury fragrances crafted by master perfumers. From rare oud to fresh florals — find the scent that tells your story.
             </p>
 
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <Link href="/products" className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.875rem 2rem' }}>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                href="/products"
+                className="flex items-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold transition-all hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, var(--color-gold), var(--color-gold-dark))',
+                  color: 'var(--color-bg)',
+                  boxShadow: 'var(--shadow-gold)',
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-gold-lg)')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-gold)')}
+              >
                 Shop Collection <ArrowRight size={18} />
               </Link>
-              <Link href="/products?featured=true" className="btn btn-secondary" style={{ fontSize: '1rem', padding: '0.875rem 2rem' }}>
+              <Link
+                href="/products?featured=true"
+                className="flex items-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold transition-all"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--color-border-gold)',
+                  color: 'var(--color-gold)',
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--color-gold-muted)')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+              >
                 Featured Picks
               </Link>
             </div>
 
             {/* Social proof */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '3rem' }}>
-              <div style={{ display: 'flex' }}>
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} style={{ width: '36px', height: '36px', borderRadius: '50%', background: `hsl(${30 + i * 20}, 60%, 40%)`, border: '2px solid var(--color-bg)', marginLeft: i > 1 ? '-10px' : 0 }} />
+            <div className="flex items-center gap-4 mt-12">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className={`w-9 h-9 rounded-full ${i > 1 ? '-ml-2.5' : ''}`}
+                    style={{
+                      background: `hsl(${30 + i * 20}, 60%, 40%)`,
+                      border: '2px solid var(--color-bg)',
+                    }}
+                  />
                 ))}
               </div>
               <div>
-                <div style={{ display: 'flex', gap: '2px', marginBottom: '2px' }}>
-                  {[1,2,3,4,5].map(i => <Star key={i} size={12} fill="var(--color-gold)" color="var(--color-gold)" />)}
+                <div className="flex gap-0.5 mb-0.5">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star key={i} size={12} style={{ fill: 'var(--color-gold)', color: 'var(--color-gold)' }} />
+                  ))}
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                   <strong style={{ color: 'var(--color-text-primary)' }}>2,400+</strong> happy customers
                 </p>
               </div>
@@ -108,22 +168,36 @@ export default function HomePage() {
       </section>
 
       {/* ── Trust Badges ──────────────────────────────────────────────── */}
-      <section style={{ padding: '2rem 0', background: 'var(--color-bg-secondary)', borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)' }}>
-        <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+      <section
+        className="py-8"
+        style={{
+          background: 'var(--color-bg-secondary)',
+          borderTop: '1px solid var(--color-border)',
+          borderBottom: '1px solid var(--color-border)',
+        }}
+      >
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { icon: ShieldCheck, title: '100% Authentic', desc: 'Genuine luxury fragrances' },
               { icon: Truck, title: 'Free Shipping', desc: 'On orders over $100' },
               { icon: RefreshCcw, title: 'Easy Returns', desc: '30-day return policy' },
               { icon: Star, title: 'Premium Quality', desc: 'Curated by experts' },
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-md)', background: 'var(--color-gold-muted)', border: '1px solid var(--color-border-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon size={20} color="var(--color-gold)" />
+              <div key={title} className="flex items-center gap-4">
+                <div
+                  className="w-11 h-11 shrink-0 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'var(--color-gold-muted)',
+                    border: '1px solid var(--color-border-gold)',
+                    color: 'var(--color-gold)',
+                  }}
+                >
+                  <Icon size={20} />
                 </div>
                 <div>
-                  <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{title}</p>
-                  <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>{desc}</p>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--color-text-primary)' }}>{title}</p>
+                  <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{desc}</p>
                 </div>
               </div>
             ))}
@@ -133,24 +207,69 @@ export default function HomePage() {
 
       {/* ── Categories ────────────────────────────────────────────────── */}
       {categories.length > 0 && (
-        <section style={{ padding: '5rem 0' }}>
-          <div className="container">
-            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-              <p style={{ color: 'var(--color-gold)', fontSize: '0.75rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.75rem', fontWeight: 600 }}>Browse By</p>
-              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>Shop Categories</h2>
+        <section className="py-20">
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="text-center mb-12">
+              <p
+                className="text-xs tracking-[0.15em] uppercase mb-3 font-semibold"
+                style={{ color: 'var(--color-gold)' }}
+              >
+                Browse By
+              </p>
+              <h2
+                className="font-serif text-[clamp(1.8rem,4vw,2.8rem)]"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                Shop Categories
+              </h2>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {categories.map((cat) => (
-                <Link key={cat._id} href={`/products?category=${cat._id}`} className="card" style={{ padding: '1.5rem 1rem', textAlign: 'center', cursor: 'pointer', textDecoration: 'none' }}>
-                  {cat.image && (
-                    <img src={getImageUrl(cat.image)} alt={cat.name} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 1rem' }} />
-                  )}
-                  {!cat.image && (
-                    <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--color-gold-muted)', border: '1px solid var(--color-border-gold)', margin: '0 auto 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ color: 'var(--color-gold)', fontWeight: 700, fontSize: '1.2rem' }}>{cat.name[0]}</span>
+                <Link
+                  key={cat._id}
+                  href={`/products?category=${cat._id}`}
+                  className="group flex flex-col items-center justify-center rounded-3xl p-6 text-center transition-all duration-300 hover:-translate-y-1"
+                  style={{
+                    background: 'var(--color-bg-card)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border-gold)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-gold)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                  }}
+                >
+                  {cat.image ? (
+                    <img
+                      src={getImageUrl(cat.image)}
+                      alt={cat.name}
+                      className="w-16 h-16 rounded-full object-cover mb-4 transition-transform duration-500 group-hover:scale-110 shadow-sm"
+                    />
+                  ) : (
+                    <div
+                      className="w-16 h-16 rounded-full mb-4 flex items-center justify-center transition-transform duration-500 group-hover:scale-110"
+                      style={{
+                        background: 'var(--color-gold-muted)',
+                        border: '1px solid var(--color-border-gold)',
+                      }}
+                    >
+                      <span
+                        className="font-bold text-xl"
+                        style={{ color: 'var(--color-gold)' }}
+                      >
+                        {cat.name[0]}
+                      </span>
                     </div>
                   )}
-                  <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{cat.name}</p>
+                  <p
+                    className="font-semibold text-sm"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {cat.name}
+                  </p>
                 </Link>
               ))}
             </div>
@@ -160,19 +279,35 @@ export default function HomePage() {
 
       {/* ── Featured Products ─────────────────────────────────────────── */}
       {featured.length > 0 && (
-        <section style={{ padding: '5rem 0', background: 'var(--color-bg-secondary)' }}>
-          <div className="container">
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <section className="py-20" style={{ background: 'var(--color-bg-secondary)' }}>
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="flex flex-wrap items-end justify-between mb-10 gap-4">
               <div>
-                <p style={{ color: 'var(--color-gold)', fontSize: '0.75rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem', fontWeight: 600 }}>Editor's Choice</p>
-                <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.8rem, 4vw, 2.5rem)' }}>Featured Products</h2>
+                <p
+                  className="text-xs tracking-[0.15em] uppercase mb-2 font-semibold"
+                  style={{ color: 'var(--color-gold)' }}
+                >
+                  Editor&apos;s Choice
+                </p>
+                <h2
+                  className="font-serif text-[clamp(1.8rem,4vw,2.5rem)]"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Featured Products
+                </h2>
               </div>
-              <Link href="/products?featured=true" className="btn btn-secondary" style={{ fontSize: '0.875rem' }}>
+              <Link
+                href="/products?featured=true"
+                className="flex items-center gap-2 text-sm transition-colors"
+                style={{ color: 'var(--color-gold)' }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-text-primary)')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-gold)')}
+              >
                 View All <ArrowRight size={15} />
               </Link>
             </div>
             {loading ? <LoadingSpinner /> : (
-              <div className="products-grid">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                 {featured.map((p) => <ProductCard key={p._id} product={p} />)}
               </div>
             )}
@@ -181,45 +316,109 @@ export default function HomePage() {
       )}
 
       {/* ── New Arrivals ──────────────────────────────────────────────── */}
-      <section style={{ padding: '5rem 0' }}>
-        <div className="container">
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <section className="py-20">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="flex flex-wrap items-end justify-between mb-10 gap-4">
             <div>
-              <p style={{ color: 'var(--color-gold)', fontSize: '0.75rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem', fontWeight: 600 }}>Just In</p>
-              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.8rem, 4vw, 2.5rem)' }}>New Arrivals</h2>
+              <p
+                className="text-xs tracking-[0.15em] uppercase mb-2 font-semibold"
+                style={{ color: 'var(--color-gold)' }}
+              >
+                Just In
+              </p>
+              <h2
+                className="font-serif text-[clamp(1.8rem,4vw,2.5rem)]"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                New Arrivals
+              </h2>
             </div>
-            <Link href="/products" className="btn btn-secondary" style={{ fontSize: '0.875rem' }}>
+            <Link
+              href="/products"
+              className="flex items-center gap-2 text-sm transition-colors"
+              style={{ color: 'var(--color-gold)' }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-text-primary)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-gold)')}
+            >
               View All <ArrowRight size={15} />
             </Link>
           </div>
           {loading ? <LoadingSpinner /> : (
-            <div className="products-grid">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {newArrivals.map((p) => <ProductCard key={p._id} product={p} />)}
             </div>
           )}
         </div>
       </section>
 
+      {/* ── Trending Now ──────────────────────────────────────────────── */}
+      {trending.length > 0 && (
+        <section className="py-20" style={{ background: 'var(--color-bg-secondary)' }}>
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="flex flex-wrap items-end justify-between mb-10 gap-4">
+              <div>
+                <p
+                  className="text-xs tracking-[0.15em] uppercase mb-2 font-semibold"
+                  style={{ color: 'var(--color-gold)' }}
+                >
+                  Most Loved
+                </p>
+                <h2
+                  className="font-serif text-[clamp(1.8rem,4vw,2.5rem)] flex items-center gap-3"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Trending Now <Sparkles size={28} style={{ color: 'var(--color-gold)' }} />
+                </h2>
+              </div>
+            </div>
+            {loading ? <LoadingSpinner /> : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {trending.map((p) => <ProductCard key={p._id} product={p} />)}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* ── CTA Banner ────────────────────────────────────────────────── */}
-      <section style={{
-        padding: '5rem 0',
-        background: 'linear-gradient(135deg, rgba(212,168,83,0.1) 0%, transparent 50%, rgba(212,168,83,0.05) 100%)',
-        borderTop: '1px solid var(--color-border)',
-        textAlign: 'center',
-      }}>
-        <div className="container">
-          <p style={{ color: 'var(--color-gold)', fontSize: '0.75rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '1rem', fontWeight: 600 }}>Exclusive Offer</p>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', marginBottom: '1rem' }}>
+      <section
+        className="py-20 text-center transition-colors duration-500"
+        style={{
+          background: 'linear-gradient(135deg, var(--color-gold-muted) 0%, transparent 50%, var(--color-gold-muted) 100%)',
+          borderTop: '1px solid var(--color-border)',
+        }}
+      >
+        <div className="container mx-auto px-4 sm:px-6">
+          <p
+            className="text-xs tracking-[0.15em] uppercase mb-4 font-semibold"
+            style={{ color: 'var(--color-gold)' }}
+          >
+            Exclusive Offer
+          </p>
+          <h2
+            className="font-serif text-[clamp(2rem,5vw,3.5rem)] mb-4"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
             Get 15% Off Your First Order
           </h2>
-          <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem', fontSize: '1rem' }}>
+          <p className="mb-8 text-base" style={{ color: 'var(--color-text-secondary)' }}>
             Use code <strong style={{ color: 'var(--color-gold)' }}>WELCOME15</strong> at checkout
           </p>
-          <Link href="/auth/register" className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.875rem 2.5rem' }}>
-            Join Now — It's Free
+          <Link
+            href="/auth/register"
+            className="inline-flex rounded-xl px-10 py-4 text-base font-bold transition-all hover:scale-105"
+            style={{
+              background: 'linear-gradient(135deg, var(--color-gold), var(--color-gold-dark))',
+              color: 'var(--color-bg)',
+              boxShadow: 'var(--shadow-gold)',
+            }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-gold-lg)')}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-gold)')}
+          >
+            Join Now — It&apos;s Free
           </Link>
         </div>
       </section>
-    </>
+    </div>
   );
 }

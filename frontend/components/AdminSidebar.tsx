@@ -1,101 +1,75 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard, Package, ShoppingBag, Users,
-  Tag, Ticket, LogOut, ChevronRight
-} from 'lucide-react';
-import { useAuthStore } from '@/lib/store';
-import { authAPI } from '@/lib/api';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, ShoppingBag, Tags, Users, Package } from "lucide-react";
+import { motion } from "framer-motion";
 
-const adminLinks = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/products', label: 'Products', icon: Package },
-  { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-  { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/categories', label: 'Categories', icon: Tag },
-  { href: '/admin/coupons', label: 'Coupons', icon: Ticket },
+const navItems = [
+  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
+  { name: "Products", href: "/admin/products", icon: Package },
+  { name: "Coupons", href: "/admin/coupons", icon: Tags },
+  { name: "Users", href: "/admin/users", icon: Users },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuthStore();
-
-  const handleLogout = async () => {
-    try { await authAPI.logout(); } catch {}
-    logout();
-  };
 
   return (
-    <aside style={{
-      width: '240px', flexShrink: 0,
-      background: 'var(--color-bg-secondary)',
-      borderRight: '1px solid var(--color-border)',
-      minHeight: '100vh',
-      display: 'flex', flexDirection: 'column',
-    }}>
+    <div
+      className="w-64 min-h-screen p-6 flex flex-col gap-8 hidden md:flex"
+      style={{
+        background: 'var(--color-bg-secondary)',
+        borderRight: '1px solid var(--color-border-gold)',
+      }}
+    >
       {/* Logo */}
-      <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)' }}>
-        <Link href="/" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', fontWeight: 700 }}>
-          <span className="text-gold">TIMO</span>
-        </Link>
-        <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Admin Panel</p>
-      </div>
-
-      {/* User info */}
-      <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--color-gold-muted)', border: '1px solid var(--color-border-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.5rem' }}>
-          <span style={{ color: 'var(--color-gold)', fontWeight: 700, fontSize: '0.875rem' }}>
-            {user?.name?.[0]?.toUpperCase()}
-          </span>
+      <div className="flex items-center gap-3">
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg, var(--color-gold), var(--color-gold-light))' }}
+        >
+          <span style={{ color: 'var(--color-bg)', fontWeight: 700, fontSize: '1.25rem' }}>T</span>
         </div>
-        <p style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.1rem' }}>{user?.name}</p>
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{user?.email}</p>
+        <h1
+          className="text-2xl font-bold bg-clip-text text-transparent"
+          style={{ backgroundImage: 'linear-gradient(135deg, var(--color-gold), var(--color-gold-light))' }}
+        >
+          Admin
+        </h1>
       </div>
 
-      {/* Navigation */}
-      <nav style={{ padding: '0.75rem', flex: 1 }}>
-        {adminLinks.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || (href !== '/admin' && pathname.startsWith(href));
+      <nav className="flex flex-col gap-2">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+
           return (
-            <Link
-              key={href}
-              href={href}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.75rem',
-                padding: '0.65rem 0.75rem',
-                borderRadius: 'var(--radius-md)',
-                marginBottom: '0.15rem',
-                background: isActive ? 'var(--color-gold-muted)' : 'transparent',
-                color: isActive ? 'var(--color-gold)' : 'var(--color-text-secondary)',
-                transition: 'all var(--transition-fast)',
-                fontSize: '0.875rem', fontWeight: isActive ? 600 : 400,
-                border: isActive ? '1px solid var(--color-border-gold)' : '1px solid transparent',
-              }}
-              onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}}
-              onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}}
-            >
-              <Icon size={17} />
-              {label}
-              {isActive && <ChevronRight size={14} style={{ marginLeft: 'auto' }} />}
+            <Link key={item.name} href={item.href}>
+              <motion.div
+                whileHover={{ x: 5 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300"
+                style={isActive ? {
+                  background: 'var(--color-gold-muted)',
+                  color: 'var(--color-gold)',
+                  border: '1px solid var(--color-border-gold)',
+                  boxShadow: 'var(--shadow-gold)',
+                } : {
+                  color: 'var(--color-text-secondary)',
+                  border: '1px solid transparent',
+                }}
+              >
+                <item.icon
+                  size={20}
+                  style={{ color: isActive ? 'var(--color-gold)' : 'var(--color-text-muted)' }}
+                />
+                <span className="font-medium">{item.name}</span>
+              </motion.div>
             </Link>
           );
         })}
       </nav>
-
-      {/* Logout */}
-      <div style={{ padding: '1rem', borderTop: '1px solid var(--color-border)' }}>
-        <button
-          onClick={handleLogout}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', transition: 'background var(--transition-fast)' }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(224,92,92,0.1)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-        >
-          <LogOut size={17} />
-          Logout
-        </button>
-      </div>
-    </aside>
+    </div>
   );
 }

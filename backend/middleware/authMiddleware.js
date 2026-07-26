@@ -32,4 +32,14 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+const admin = (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
+    next();
+  } else {
+    const error = new Error("Not authorized as an admin");
+    error.statusCode = 403;
+    next(error);
+  }
+};
+
+module.exports = { protect, admin };

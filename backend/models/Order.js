@@ -72,4 +72,8 @@ const orderSchema = new mongoose.Schema(
 // Index to query recent orders quickly
 orderSchema.index({ createdAt: -1 });
 
+// Optimization: Indexes for faster query performance
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ status: 1 });
+
 module.exports = mongoose.model("Order", orderSchema);

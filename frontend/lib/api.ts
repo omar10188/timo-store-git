@@ -74,6 +74,8 @@ export const productsAPI = {
   getAll: (params?: Record<string, string | number>) =>
     api.get('/products', { params }),
   getById: (id: string) => api.get(`/products/${id}`),
+  getTrending: () => api.get('/products/trending'),
+  getRecommendations: (id: string) => api.get(`/products/${id}/recommendations`),
   create: (data: FormData) =>
     api.post('/products', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   update: (id: string, data: FormData) =>
@@ -152,6 +154,17 @@ export const adminAPI = {
     api.get('/admin/orders', { params }),
   updateOrderStatus: (id: string, status: string) =>
     api.put(`/admin/orders/${id}/status`, { status }),
+};
+
+// ─── Upload & Images API ──────────────────────────────────────────────────────
+export const uploadAPI = {
+  uploadProductImage: (data: FormData) => 
+    api.post('/upload/product', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+};
+
+export const imagesAPI = {
+  getProductImages: () => api.get('/images/products'),
+  deleteProductImage: (filename: string) => api.delete(`/images/${filename}`),
 };
 
 export default api;

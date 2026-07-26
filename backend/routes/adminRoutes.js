@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middleware/authMiddleware");
-const { admin } = require("../middleware/adminMiddleware");
+const { protect, admin } = require("../middleware/authMiddleware");
 const {
   getDashboardStats,
   getAllUsers,
@@ -9,7 +8,7 @@ const {
   deleteUser,
 } = require("../controllers/adminController");
 const {
-  getAllOrders,
+  getOrders,
   updateOrderStatus,
 } = require("../controllers/orderController");
 
@@ -25,7 +24,7 @@ router.put("/users/:id/role", updateUserRole);
 router.delete("/users/:id", deleteUser);
 
 // Orders (admin view)
-router.get("/orders", getAllOrders);
+router.get("/orders", getOrders);
 router.put("/orders/:id/status", updateOrderStatus);
 
 module.exports = router;

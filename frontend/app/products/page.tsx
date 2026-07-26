@@ -9,7 +9,10 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface Category { _id: string; name: string; }
 
-export default function ProductsPage() {
+import { Suspense } from 'react';
+
+// Rename the existing component
+function ProductsContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -184,5 +187,13 @@ export default function ProductsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner text="Loading products..." />}>
+      <ProductsContent />
+    </Suspense>
   );
 }

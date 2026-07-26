@@ -33,9 +33,39 @@ const getDashboardStats = async (req, res, next) => {
       Product.find({ stock: { $lt: 5 } })
         .select("name stock price")
         .limit(10),
+      // Sales data (Daily revenue for charts)
+      Order.aggregate([
+        { $match: { paymentStatus: "paid" } },
+        { 
+          $group: { 
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, 
+            revenue: { $sum: "$totalPrice" } 
+          } 
+        },
+        { $sort: { _id: 1 } },
+        { $limit: 30 }
+      ]),
+      // Top products (By quantity sold)
+      Order.aggregate([
+        { $match: { paymentStatus: "paid" } },
+        { $unwind: "$items" },
+        { 
+          $group: { 
+            _id: "$items.name", 
+            totalSold: { $sum: "$items.quantity" },
+            revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
+          } 
+        },
+        { $sort: { totalSold: -1 } },
+        { $limit: 5 }
+      ])
     ]);
 
     const totalRevenue = revenueResult[0]?.total || 0;
+    
+    // Format salesData for Recharts
+    const salesData = salesDataResult.map(item => ({ date: item._id, revenue: item.revenue }));
+    const topProducts = topProductsResult.map(item => ({ name: item._id, sold: item.totalSold, revenue: item.revenue }));
 
     res.json({
       totalUsers,
@@ -44,6 +74,8 @@ const getDashboardStats = async (req, res, next) => {
       totalRevenue,
       recentOrders,
       lowStockProducts,
+      salesData,
+      topProducts,
     });
   } catch (error) {
     next(error);

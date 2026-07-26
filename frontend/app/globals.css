@@ -1,14 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
 
-/* ─── CSS Custom Properties (Design Tokens) ─────────────────────────────────── */
-:root {
-  /* Colors */
+/* ─── Tailwind v4: dark mode uses html.dark class strategy ───────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── CSS Custom Properties — Dark Mode (default) ───────────────────────────── */
+:root,
+html.dark {
+  /* Backgrounds */
   --color-bg: #0a0a0a;
   --color-bg-secondary: #111111;
   --color-bg-card: #161616;
   --color-bg-elevated: #1e1e1e;
+
+  /* Borders */
   --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-gold: rgba(212, 168, 83, 0.3);
+  --color-border-gold: rgba(212, 168, 83, 0.30);
 
   /* Gold accent palette */
   --color-gold: #d4a853;
@@ -27,6 +34,67 @@
   --color-warning: #f0a04b;
   --color-info: #4b9cf0;
 
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-gold: 0 0 20px rgba(212, 168, 83, 0.20);
+  --shadow-gold-lg: 0 0 40px rgba(212, 168, 83, 0.30);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(22, 22, 22, 0.80);
+
+  /* Scrollbar */
+  --scrollbar-track: #0a0a0a;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── CSS Custom Properties — Light Mode ─────────────────────────────────────── */
+html.light {
+  /* Backgrounds — warm ivory luxury palette */
+  --color-bg: #faf9f6;
+  --color-bg-secondary: #f4f2ed;
+  --color-bg-card: #ffffff;
+  --color-bg-elevated: #ede9e2;
+
+  /* Borders */
+  --color-border: rgba(0, 0, 0, 0.07);
+  --color-border-gold: rgba(154, 114, 50, 0.25);
+
+  /* Gold accent — deep bronze, NOT bright yellow */
+  --color-gold: #9a7232;
+  --color-gold-light: #b8902f;
+  --color-gold-dark: #7a5c1e;
+  --color-gold-muted: rgba(154, 114, 50, 0.10);
+
+  /* Text — warm near-black */
+  --color-text-primary: #1a1714;
+  --color-text-secondary: #5c5248;
+  --color-text-muted: #9c8f84;
+
+  /* Status */
+  --color-success: #2e7d52;
+  --color-error: #b83232;
+  --color-warning: #b86010;
+  --color-info: #2060b8;
+
+  /* Shadows — softer for light */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-gold: 0 0 20px rgba(154, 114, 50, 0.15);
+  --shadow-gold-lg: 0 0 40px rgba(154, 114, 50, 0.20);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(250, 249, 246, 0.85);
+
+  /* Scrollbar */
+  --scrollbar-track: #f4f2ed;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.10);
+}
+
+/* ─── Shared tokens (theme-independent) ─────────────────────────────────────── */
+:root {
   /* Typography */
   --font-heading: 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
@@ -46,13 +114,6 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-full: 9999px;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
-  --shadow-gold: 0 0 20px rgba(212, 168, 83, 0.2);
-  --shadow-gold-lg: 0 0 40px rgba(212, 168, 83, 0.3);
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -81,6 +142,8 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Smooth theme transitions on the root element — eliminates hard flicker */
+  transition: background-color 500ms ease, color 500ms ease;
 }
 
 body {
@@ -89,6 +152,7 @@ body {
   color: var(--color-text-primary);
   line-height: 1.6;
   min-height: 100vh;
+  transition: background-color 500ms ease, color 500ms ease;
 }
 
 /* ─── Typography ─────────────────────────────────────────────────────────────── */
@@ -153,7 +217,7 @@ input, textarea, select {
 
 .btn-primary {
   background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark));
-  color: #0a0a0a;
+  color: var(--color-bg);
   box-shadow: var(--shadow-gold);
 }
 
@@ -181,17 +245,17 @@ input, textarea, select {
 
 .btn-ghost:hover {
   color: var(--color-text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-border);
 }
 
 .btn-danger {
-  background: rgba(224, 92, 92, 0.15);
+  background: rgba(224, 92, 92, 0.12);
   color: var(--color-error);
-  border: 1px solid rgba(224, 92, 92, 0.3);
+  border: 1px solid rgba(224, 92, 92, 0.25);
 }
 
 .btn-danger:hover {
-  background: rgba(224, 92, 92, 0.25);
+  background: rgba(224, 92, 92, 0.20);
 }
 
 .btn:disabled {
@@ -235,6 +299,12 @@ input, textarea, select {
   color: var(--color-text-muted);
 }
 
+/* select option needs explicit bg for legibility in both modes */
+.input option {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+}
+
 /* ─── Badge ──────────────────────────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
@@ -248,10 +318,10 @@ input, textarea, select {
 }
 
 .badge-gold { background: var(--color-gold-muted); color: var(--color-gold); }
-.badge-success { background: rgba(76, 175, 125, 0.15); color: var(--color-success); }
-.badge-error { background: rgba(224, 92, 92, 0.15); color: var(--color-error); }
-.badge-warning { background: rgba(240, 160, 75, 0.15); color: var(--color-warning); }
-.badge-info { background: rgba(75, 156, 240, 0.15); color: var(--color-info); }
+.badge-success { background: rgba(76, 175, 125, 0.12); color: var(--color-success); }
+.badge-error { background: rgba(224, 92, 92, 0.12); color: var(--color-error); }
+.badge-warning { background: rgba(240, 160, 75, 0.12); color: var(--color-warning); }
+.badge-info { background: rgba(75, 156, 240, 0.12); color: var(--color-info); }
 
 /* ─── Divider ────────────────────────────────────────────────────────────────── */
 .divider {
@@ -262,7 +332,7 @@ input, textarea, select {
 
 /* ─── Glassmorphism ──────────────────────────────────────────────────────────── */
 .glass {
-  background: rgba(22, 22, 22, 0.8);
+  background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--color-border);
@@ -270,8 +340,8 @@ input, textarea, select {
 
 /* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--color-bg); }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-gold-dark); }
 
 /* ─── Utilities ──────────────────────────────────────────────────────────────── */
@@ -316,6 +386,14 @@ input, textarea, select {
   border-top-color: var(--color-gold);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
+}
+
+/* ─── Admin panel — theme-aware utilities ────────────────────────────────────── */
+.admin-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: background-color 500ms ease, border-color 500ms ease;
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */

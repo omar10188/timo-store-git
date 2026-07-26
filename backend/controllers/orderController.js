@@ -103,10 +103,15 @@ const createOrder = asyncHandler(async (req, res, next) => {
     }))
   );
 
+  const { sendOrderConfirmationEmail } = require("../services/emailService");
+  
   // 8. Clear the user's cart
   cart.items = [];
   cart.totalPrice = 0;
   await cart.save();
+
+  // Send order confirmation asynchronously
+  sendOrderConfirmationEmail(req.user, order).catch(err => console.error("Order confirmation email failed", err));
 
   res.status(201).json(order);
 });

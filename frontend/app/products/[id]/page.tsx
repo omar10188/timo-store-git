@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ShoppingCart, Heart, Star, ArrowLeft, Minus, Plus, Share2, Check } from 'lucide-react';
+import { ShoppingCart, Heart, Star, ArrowLeft, Minus, Plus, Share2, Check, Sparkles } from 'lucide-react';
 import { productsAPI, reviewsAPI, cartAPI, wishlistAPI } from '@/lib/api';
 import { useCartStore, useWishlistStore, useAuthStore } from '@/lib/store';
 import StarRating from '@/components/StarRating';
+import ProductCard from '@/components/ProductCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
@@ -23,6 +24,7 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const [product, setProduct] = useState<any>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -39,12 +41,14 @@ export default function ProductDetailPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [prodRes, revRes] = await Promise.all([
+        const [prodRes, revRes, recRes] = await Promise.all([
           productsAPI.getById(id),
           reviewsAPI.getByProduct(id),
+          productsAPI.getRecommendations(id),
         ]);
         setProduct(prodRes.data);
         setReviews(revRes.data || []);
+        setRecommendations(recRes.data || []);
       } catch {
         toast.error('Product not found');
         router.push('/products');
@@ -55,14 +59,18 @@ export default function ProductDetailPage() {
     load();
   }, [id]);
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (redirect = false) => {
     if (!isAuthenticated) { toast.error('Please sign in to add to cart'); return; }
     setAddingToCart(true);
     try {
       await cartAPI.add(product._id, quantity);
       addItem({ product: product._id, name: product.name, price: product.salePrice || product.price, image: product.image, quantity });
-      openCart();
       toast.success('Added to cart!');
+      if (redirect) {
+        router.push('/checkout');
+      } else {
+        openCart();
+      }
     } catch { toast.error('Failed to add to cart'); }
     finally { setAddingToCart(false); }
   };
@@ -195,12 +203,21 @@ export default function ProductDetailPage() {
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             <button
               className="btn btn-primary"
-              style={{ flex: 1, minWidth: '160px', justifyContent: 'center' }}
-              onClick={handleAddToCart}
+              style={{ flex: 1, minWidth: '140px', justifyContent: 'center' }}
+              onClick={() => handleAddToCart(false)}
               disabled={addingToCart || product.stock === 0}
             >
               {addingToCart ? <div className="spinner" style={{ width: '16px', height: '16px' }} /> : <ShoppingCart size={18} />}
               {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+            </button>
+            
+            <button
+              className="btn btn-secondary"
+              style={{ flex: 1, minWidth: '140px', justifyContent: 'center', background: 'var(--color-gold)', color: 'var(--color-bg)', border: 'none' }}
+              onClick={() => handleAddToCart(true)}
+              disabled={addingToCart || product.stock === 0}
+            >
+              Buy Now
             </button>
 
             <button
@@ -219,12 +236,36 @@ export default function ProductDetailPage() {
 
           {/* Stock info */}
           {(product.stock ?? 0) > 0 && (
-            <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Check size={13} /> {product.stock} in stock — ready to ship
-            </p>
+            <div style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
+              {(product.stock ?? 0) <= 5 ? (
+                <p style={{ color: 'var(--color-error)', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, animation: 'pulse 2s infinite' }}>
+                  <Sparkles size={14} /> Hurry! Only {product.stock} left in stock.
+                </p>
+              ) : (
+                <p style={{ color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Check size={14} /> {product.stock} in stock — ready to ship
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
+
+      {/* Recommendations Section (AI Driven) */}
+      {recommendations.length > 0 && (
+        <section style={{ marginBottom: '4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600 }}>
+              You May Also Like
+            </h2>
+          </div>
+          <div className="products-grid">
+            {recommendations.map((p) => (
+              <ProductCard key={p._id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Reviews Section */}
       <section>

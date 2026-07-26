@@ -92,4 +92,9 @@ productSchema.virtual("salePrice").get(function () {
 productSchema.set("toJSON", { virtuals: true });
 productSchema.set("toObject", { virtuals: true });
 
+// Optimization: Indexes for faster query performance
+productSchema.index({ name: 'text', description: 'text' });
+productSchema.index({ category: 1, price: 1 });
+productSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("Product", productSchema);

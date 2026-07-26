@@ -71,6 +71,32 @@ const addToCart = asyncHandler(async (req, res, next) => {
   }
 
   await cart.save();
+
+  // Set/Reset Abandoned Cart Timer (1 hour)
+  const { sendAbandonedCartEmail } = require("../services/emailService");
+  const userIdStr = req.user._id.toString();
+  
+  if (global.abandonedCartTimers && global.abandonedCartTimers.has(userIdStr)) {
+    clearTimeout(global.abandonedCartTimers.get(userIdStr));
+  } else if (!global.abandonedCartTimers) {
+    global.abandonedCartTimers = new Map();
+  }
+
+  const timer = setTimeout(async () => {
+    try {
+      const currentCart = await Cart.findOne({ user: req.user._id }).populate("items.product");
+      // If cart still has items after 1 hour, it's abandoned
+      if (currentCart && currentCart.items.length > 0) {
+        await sendAbandonedCartEmail(req.user, currentCart);
+      }
+      global.abandonedCartTimers.delete(userIdStr);
+    } catch (err) {
+      console.error("Abandoned cart email error", err);
+    }
+  }, 60 * 60 * 1000); // 1 hour
+
+  global.abandonedCartTimers.set(userIdStr, timer);
+
   res.json(cart);
 });
 

@@ -2,8 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
-const { protect } = require("../middleware/authMiddleware");
-const { admin } = require("../middleware/adminMiddleware");
+const { protect, admin } = require("../middleware/authMiddleware");
 const {
   getCategories,
   getCategoryById,

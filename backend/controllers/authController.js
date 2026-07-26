@@ -36,8 +36,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
   const accessToken = generateToken(user._id, user.role);
   const refreshToken = generateRefreshToken(user._id, user.role);
 
+  const { sendWelcomeEmail } = require("../services/emailService");
+  
   user.refreshToken = refreshToken;
   await user.save();
+
+  // Send welcome email asynchronously
+  sendWelcomeEmail(user).catch(err => console.error("Welcome email failed", err));
 
   res.status(201).json({
     _id: user._id,

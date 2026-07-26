@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const path = require("path");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const mongoSanitize = require("express-mongo-sanitize");
 
 // DB
 const connectDB = require("./config/db");
@@ -20,6 +21,9 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
+const imageRoutes = require("./routes/imageRoutes");
 
 // Middleware
 const errorHandler = require("./middleware/errorMiddleware");
@@ -44,10 +48,18 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// ─── Payment Webhook (Must be before express.json) ───────────────────────────
+// Stripe requires the raw body to verify the signature
+app.use("/api/payments/webhook", express.raw({ type: "application/json" }), paymentRoutes);
+
 // ─── General Middleware ────────────────────────────────────────────────────────
-app.use(morgan("dev"));
+// Use 'combined' format for production logging, 'dev' for local
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Prevent NoSQL injections
+app.use(mongoSanitize());
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -81,6 +93,9 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/images", imageRoutes);
 
 // ─── Error Handling ────────────────────────────────────────────────────────────
 app.use(notFound);
