@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
+const { successResponse, errorResponse } = require("../utils/apiResponse");
 
 /**
  * GET /api/admin/stats
@@ -119,16 +120,17 @@ const updateUserRole = async (req, res, next) => {
     const { role } = req.body;
 
     if (!["user", "admin"].includes(role)) {
-      const err = new Error("Role must be 'user' or 'admin'");
-      err.statusCode = 400;
-      return next(err);
+      return next({
+        statusCode: 400,
+        message: "Role must be 'user' or 'admin'",
+      });
     }
 
-    // Prevent admin from demoting themselves
     if (req.params.id === req.user._id.toString()) {
-      const err = new Error("You cannot change your own role");
-      err.statusCode = 400;
-      return next(err);
+      return next({
+        statusCode: 400,
+        message: "You cannot change your own role",
+      });
     }
 
     const user = await User.findByIdAndUpdate(
@@ -138,12 +140,17 @@ const updateUserRole = async (req, res, next) => {
     );
 
     if (!user) {
-      const err = new Error("User not found");
-      err.statusCode = 404;
-      return next(err);
+      return next({
+        statusCode: 404,
+        message: "User not found",
+      });
     }
 
-    res.json(user);
+    res.status(200).json({
+      success: true,
+      data: user,
+      message: "User role updated successfully",
+    });
   } catch (error) {
     next(error);
   }
@@ -156,19 +163,15 @@ const updateUserRole = async (req, res, next) => {
 const deleteUser = async (req, res, next) => {
   try {
     if (req.params.id === req.user._id.toString()) {
-      const err = new Error("You cannot delete your own account");
-      err.statusCode = 400;
-      return next(err);
+      return errorResponse(res, "Validation Error", "You cannot delete your own account", 400);
     }
 
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
-      const err = new Error("User not found");
-      err.statusCode = 404;
-      return next(err);
+      return errorResponse(res, "Not Found", "User not found", 404);
     }
 
-    res.json({ message: "User deleted successfully" });
+    return successResponse(res, null, "User deleted successfully");
   } catch (error) {
     next(error);
   }

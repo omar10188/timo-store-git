@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs").promises;
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect, authorize } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ const uploadDir = path.join(__dirname, "..", "uploads", "products");
 // @desc    Get all product images
 // @route   GET /api/images/products
 // @access  Private/Admin
-router.get("/products", protect, admin, async (req, res, next) => {
+router.get("/products", protect, authorize("admin"), async (req, res, next) => {
   try {
     // Check if directory exists
     try {
@@ -47,7 +47,7 @@ router.get("/products", protect, admin, async (req, res, next) => {
 // @desc    Delete a product image
 // @route   DELETE /api/images/:filename
 // @access  Private/Admin
-router.delete("/:filename", protect, admin, async (req, res, next) => {
+router.delete("/:filename", protect, authorize("admin"), async (req, res, next) => {
   try {
     const { filename } = req.params;
     

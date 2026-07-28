@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect, authorize } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -42,7 +42,7 @@ const upload = multer({
 // @desc    Upload product image
 // @route   POST /api/upload/product
 // @access  Private/Admin
-router.post("/product", protect, admin, upload.single("image"), (req, res) => {
+router.post("/product", protect, authorize("admin"), upload.single("image"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No image file provided" });
   }

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect, authorize } = require("../middleware/authMiddleware");
 const {
   createCoupon,
   getCoupons,
@@ -17,7 +17,7 @@ router.use(protect);
 router.post("/validate", validateCoupon);
 
 // Admin only routes
-router.use(admin);
+router.use(authorize("admin"));
 
 router.route("/")
   .post(createCoupon)

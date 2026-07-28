@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect, authorize } = require("../middleware/authMiddleware");
 const {
   getCategories,
   getCategoryById,
@@ -21,8 +21,8 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 router.get("/", getCategories);
 router.get("/:id", getCategoryById);
-router.post("/", protect, admin, upload.single("image"), createCategory);
-router.put("/:id", protect, admin, upload.single("image"), updateCategory);
-router.delete("/:id", protect, admin, deleteCategory);
+router.post("/", protect, authorize("admin"), upload.single("image"), createCategory);
+router.put("/:id", protect, authorize("admin"), upload.single("image"), updateCategory);
+router.delete("/:id", protect, authorize("admin"), deleteCategory);
 
 module.exports = router;

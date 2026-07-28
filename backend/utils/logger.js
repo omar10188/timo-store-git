@@ -13,9 +13,8 @@ const logger = winston.createLogger({
         winston.format.simple()
       )
     }),
-    // In a real production environment, you might add File transports or external logging services here
-    // new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    // new winston.transports.File({ filename: 'combined.log' }),
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'logs/combined.log' }),
   ],
 });
 

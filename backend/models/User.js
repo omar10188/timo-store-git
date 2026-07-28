@@ -24,13 +24,28 @@ const userSchema = new mongoose.Schema(
     password: { 
       type: String, 
       required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters long"]
+      minlength: [6, "Password must be at least 6 characters long"],
+      select: false,
+      validate: {
+        validator: function (value) {
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(value);
+        },
+        message: "Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number",
+      },
     },
     role: { 
       type: String, 
       enum: ["user", "admin"], 
       default: "user" 
     },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: String,
+    emailVerificationExpire: Date,
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
     refreshToken: { type: String, default: null },
     avatar: { type: String, default: "" },
     phone: { 
@@ -54,11 +69,55 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+
 // Virtual field for full address string
 userSchema.virtual("fullAddress").get(function () {
   if (!this.address.street) return "No address provided";
   return `${this.address.street}, ${this.address.city}, ${this.address.postalCode}, ${this.address.country}`;
 });
+
+// Pre-save hook to hash password
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Compare password
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Generate and hash email verification token
+userSchema.methods.getEmailVerificationToken = function () {
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+
+  this.emailVerificationToken = crypto
+    .createHash("sha256")
+    .update(verificationToken)
+    .digest("hex");
+
+  this.emailVerificationExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  return verificationToken;
+};
+
+// Generate and hash password reset token
+userSchema.methods.getResetPasswordToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  return resetToken;
+};
 
 // Ensure virtuals are included in JSON output
 userSchema.set("toJSON", { virtuals: true });

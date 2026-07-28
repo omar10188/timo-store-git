@@ -4,42 +4,43 @@ const User = require("../models/User");
 const protect = async (req, res, next) => {
   try {
     let token;
+    const authHeader = req.headers.authorization;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-      token = req.headers.authorization.split(" ")[1];
+    if (authHeader && authHeader.startsWith("Bearer")) {
+      token = authHeader.split(" ")[1];
     }
 
     if (!token) {
-      const error = new Error("Not authorized, no token");
-      error.statusCode = 401;
-      return next(error);
+      return next({ statusCode: 401, message: "Not authorized, no token" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const config = require("../config");
+    const decoded = jwt.verify(token, config.jwt.accessSecret);
+    
+    // JWT payload now only has { id }
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      const error = new Error("User not found");
-      error.statusCode = 401;
-      return next(error);
+      return next({ statusCode: 401, message: "Not authorized, user not found" });
     }
 
     req.user = user;
     next();
   } catch (error) {
-    error.statusCode = 401;
-    next(error);
+    next({ statusCode: 401, message: "Not authorized, token failed" });
   }
 };
 
-const admin = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return next({
+        statusCode: 403,
+        message: `User role '${req.user ? req.user.role : "undefined"}' is not authorized to access this route`,
+      });
+    }
     next();
-  } else {
-    const error = new Error("Not authorized as an admin");
-    error.statusCode = 403;
-    next(error);
-  }
+  };
 };
 
-module.exports = { protect, admin };
+module.exports = { protect, authorize };

@@ -1,15 +1,21 @@
-require("dotenv").config();
+const config = require("./config");
 
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const cookieParser = require("cookie-parser");
 const path = require("path");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
+const xss = require("xss-clean");
+const hpp = require("hpp");
 
 // DB
 const connectDB = require("./config/db");
+
+// Utils
+const logger = require("./utils/logger");
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
@@ -36,7 +42,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: config.clientUrl,
     credentials: true,
   })
 );
@@ -53,13 +59,19 @@ app.use(limiter);
 app.use("/api/payments/webhook", express.raw({ type: "application/json" }), paymentRoutes);
 
 // ─── General Middleware ────────────────────────────────────────────────────────
-// Use 'combined' format for production logging, 'dev' for local
-app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+const morganFormat = config.env === "production" ? "combined" : "dev";
+app.use(
+  morgan(morganFormat, {
+    stream: {
+      write: (message) => logger.info(message.trim()),
+    },
+  })
+);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
 
-// Prevent NoSQL injections
-app.use(mongoSanitize());
+// Prevent NoSQL injections (Moved to security block above)
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -104,7 +116,7 @@ app.use(errorHandler);
 // ─── Start Server ──────────────────────────────────────────────────────────────
 connectDB()
   .then(() => {
-    const PORT = process.env.PORT || 5000;
+    const PORT = config.port;
     app.listen(PORT, () => {
       console.log(`✅ MongoDB connected`);
       console.log(`🚀 Server running on http://localhost:${PORT}`);
