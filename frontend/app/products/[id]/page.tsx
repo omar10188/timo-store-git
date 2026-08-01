@@ -572,6 +572,9 @@ export default function ProductDetailPage() {
               <img
                 src={getImageUrl(allImages[selectedImage] || '')}
                 alt={product.name}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
                 style={{
                   width: '100%', height: '100%', objectFit: 'cover',
                   transition: 'transform 0.5s cubic-bezier(0.16,1,0.3,1)',
@@ -1077,20 +1080,78 @@ export default function ProductDetailPage() {
         )}
       </div>
 
+      {/* ═════════════════════════════════════════════════════════
+          STICKY MOBILE BOTTOM BAR (Mobile conversion booster)
+      ═════════════════════════════════════════════════════════ */}
+      <div className="pdp-mobile-sticky-bar">
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '0.68rem', color: DS.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+            Total ({quantity}x)
+          </span>
+          <span style={{ fontSize: '1.25rem', fontWeight: 800, color: DS.textPrimary, letterSpacing: '-0.02em' }}>
+            EGP {(displayPrice * quantity).toFixed(2)}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.5rem', flex: 1, justifyContent: 'flex-end', maxWidth: 220 }}>
+          <AddToCartBtn
+            onClick={() => handleAddToCart(false)}
+            disabled={addingToCart || product.stock === 0}
+            loading={addingToCart}
+          >
+            {!addingToCart && <ShoppingCart size={17} />}
+          </AddToCartBtn>
+
+          <BuyNowBtn
+            onClick={() => handleAddToCart(true)}
+            disabled={addingToCart || product.stock === 0}
+          >
+            Buy Now
+          </BuyNowBtn>
+        </div>
+      </div>
+
       {/* ── Page-scoped styles ── */}
       <style>{`
         @keyframes pdp-spin {
           to { transform: rotate(360deg); }
         }
-        @media (max-width: 860px) {
+
+        .pdp-mobile-sticky-bar {
+          display: none;
+        }
+
+        @media (max-width: 768px) {
+          .pdp-mobile-sticky-bar {
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 99;
+            background: rgba(15, 15, 15, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.75);
+          }
+
           .pdp-top {
             grid-template-columns: 1fr !important;
-            gap: 2rem !important;
+            gap: 1.75rem !important;
           }
-        }
-        @media (max-width: 640px) {
+
           .pdp-reviews-grid {
             grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+          }
+
+          /* Extra bottom padding so sticky bar doesn't cover content */
+          .container {
+            padding-bottom: 100px !important;
           }
         }
       `}</style>
