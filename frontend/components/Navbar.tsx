@@ -183,8 +183,12 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* Cart */}
-          <button
+          {/* Cart with animated badge and bounce feedback */}
+          <motion.button
+            key={cartCount}
+            initial={cartCount > 0 ? { scale: 1.25 } : false}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             id="cart-toggle"
             className="flex h-10 w-10 items-center justify-center rounded-xl transition-colors relative"
             style={{ color: 'var(--color-text-secondary)' }}
@@ -195,14 +199,16 @@ export default function Navbar() {
           >
             <ShoppingCart size={20} />
             {cartCount > 0 && (
-              <span
-                className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold shadow-sm"
-                style={{ background: 'var(--color-gold)', color: 'var(--color-bg)' }}
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full text-[9px] font-bold shadow-md border border-[var(--color-bg)]"
+                style={{ background: 'var(--color-gold)', color: 'var(--color-bg)', minWidth: '18px', height: '18px' }}
               >
                 {cartCount > 9 ? '9+' : cartCount}
-              </span>
+              </motion.span>
             )}
-          </button>
+          </motion.button>
 
           {/* Auth */}
           {isAuthenticated ? (

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Search, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { productsAPI, categoriesAPI } from '@/lib/api';
-import ProductCard, { Product } from '@/components/ProductCard';
+import ProductCard, { Product, ProductCardSkeleton } from '@/components/ProductCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface Category { _id: string; name: string; }
@@ -209,9 +209,13 @@ function ProductsContent() {
         </div>
       )}
 
-      {/* Products Grid */}
+      {/* Products Grid — Skeleton loading for high perceived performance */}
       {loading ? (
-        <LoadingSpinner text="Loading products..." />
+        <div className="products-grid">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <ProductCardSkeleton key={i} />
+          ))}
+        </div>
       ) : products.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--color-text-muted)' }}>
           <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>No products found</p>
