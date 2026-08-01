@@ -118,7 +118,139 @@ function RatingBar({ star, count, total }: { star: number; count: number; total:
   );
 }
 
-/* ── White action button ─────────────────────────────────────────── */
+/* ── CTA Button — Buy Now (solid white) ─────────────────────────── */
+function BuyNowBtn({
+  children, onClick, disabled, loading: isLoading = false,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  return (
+    <button
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setPressed(false); }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '0.55rem', height: 54, borderRadius: 14,
+        flex: 1,
+        fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.06em',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.38 : 1,
+        border: 'none',
+        fontFamily: 'var(--font-body)',
+        /* White solid fill */
+        background: pressed && !disabled
+          ? '#d4d4d4'
+          : hovered && !disabled
+            ? '#efefef'
+            : '#ffffff',
+        color: '#0a0a0a',
+        /* Lift + scale on hover */
+        transform: pressed && !disabled
+          ? 'translateY(1px) scale(0.98)'
+          : hovered && !disabled
+            ? 'translateY(-2px) scale(1.01)'
+            : 'none',
+        /* Glow */
+        boxShadow: pressed && !disabled
+          ? '0 2px 8px rgba(255,255,255,0.12)'
+          : hovered && !disabled
+            ? '0 8px 32px rgba(255,255,255,0.25), 0 2px 8px rgba(255,255,255,0.12)'
+            : '0 4px 18px rgba(255,255,255,0.14)',
+        transition: 'all 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {isLoading ? (
+        <div style={{
+          width: 16, height: 16, borderRadius: '50%',
+          border: '2.5px solid rgba(10,10,10,0.3)',
+          borderTopColor: '#0a0a0a',
+          animation: 'pdp-spin 0.55s linear infinite',
+        }} />
+      ) : null}
+      {children}
+    </button>
+  );
+}
+
+/* ── CTA Button — Add to Cart (outline) ─────────────────────────── */
+function AddToCartBtn({
+  children, onClick, disabled, loading: isLoading = false,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  return (
+    <button
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setPressed(false); }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '0.55rem', height: 54, borderRadius: 14,
+        flex: 1,
+        fontWeight: 700, fontSize: '0.88rem', letterSpacing: '0.05em',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.38 : 1,
+        fontFamily: 'var(--font-body)',
+        /* Outline fill */
+        background: pressed && !disabled
+          ? 'rgba(255,255,255,0.10)'
+          : hovered && !disabled
+            ? 'rgba(255,255,255,0.06)'
+            : 'transparent',
+        color: '#ffffff',
+        border: `1.5px solid ${
+          pressed && !disabled
+            ? 'rgba(255,255,255,0.6)'
+            : hovered && !disabled
+              ? 'rgba(255,255,255,0.5)'
+              : 'rgba(255,255,255,0.25)'
+        }`,
+        transform: pressed && !disabled
+          ? 'translateY(1px) scale(0.98)'
+          : hovered && !disabled
+            ? 'translateY(-1px)'
+            : 'none',
+        boxShadow: hovered && !disabled
+          ? '0 4px 18px rgba(255,255,255,0.06)'
+          : 'none',
+        transition: 'all 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {isLoading ? (
+        <div style={{
+          width: 16, height: 16, borderRadius: '50%',
+          border: '2.5px solid rgba(255,255,255,0.3)',
+          borderTopColor: '#ffffff',
+          animation: 'pdp-spin 0.55s linear infinite',
+        }} />
+      ) : null}
+      {children}
+    </button>
+  );
+}
+
+/* ── White action button (generic fallback) ──────────────────────── */
 function WhiteBtn({
   children, onClick, disabled, outline = false, style = {},
 }: {
@@ -135,7 +267,7 @@ function WhiteBtn({
     fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.06em',
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.4 : 1,
-    transition: 'all 0.22s ease',
+    transition: 'all 0.2s ease',
     fontFamily: 'var(--font-body)',
     border: 'none',
   };
@@ -167,21 +299,33 @@ function WhiteBtn({
 
 /* ── Icon button ─────────────────────────────────────────────────── */
 function IconBtn({
-  children, onClick, active = false, title = '',
+  children, onClick, active = false, title = '', style = {},
 }: {
-  children: React.ReactNode; onClick?: () => void; active?: boolean; title?: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  active?: boolean;
+  title?: string;
+  style?: React.CSSProperties;
 }) {
   const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
   return (
     <button
       onClick={onClick}
       title={title}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setPressed(false); }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
       style={{
-        width: 50, height: 50, borderRadius: DS.radiusMd,
-        border: `1.5px solid ${active ? DS.gold : hovered ? 'rgba(255,255,255,0.3)' : DS.border}`,
-        background: active ? DS.goldMuted : hovered ? 'rgba(255,255,255,0.04)' : DS.elevated,
+        height: 54,
+        borderRadius: 14,
+        border: `1.5px solid ${active ? DS.gold : hovered ? 'rgba(255,255,255,0.35)' : DS.border}`,
+        background: pressed && !active
+          ? 'rgba(255,255,255,0.08)'
+          : active ? DS.goldMuted
+            : hovered ? 'rgba(255,255,255,0.05)'
+              : DS.elevated,
         color: active ? DS.gold : hovered ? DS.textPrimary : DS.textMuted,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer', transition: 'all 0.2s ease', flexShrink: 0,
@@ -513,35 +657,46 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
-              <WhiteBtn
-                outline
-                onClick={() => handleAddToCart(false)}
-                disabled={addingToCart || product.stock === 0}
-                style={{ flex: 1 }}
-              >
-                {addingToCart
-                  ? <div style={{ width: 15, height: 15, borderRadius: '50%', border: '2px solid currentColor', borderTopColor: 'transparent', animation: 'pdp-spin 0.6s linear infinite' }} />
-                  : <ShoppingCart size={15} />}
-                {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-              </WhiteBtn>
+            {/* ═══ ACTION BUTTONS ══════════════════════════════════ */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
-              <WhiteBtn
-                onClick={() => handleAddToCart(true)}
-                disabled={addingToCart || product.stock === 0}
-                style={{ flex: 1 }}
-              >
-                Buy Now
-              </WhiteBtn>
+              {/* Row 1: Add to Cart + Buy Now (full-width pair) */}
+              <div style={{ display: 'flex', gap: '0.65rem' }}>
+                <AddToCartBtn
+                  onClick={() => handleAddToCart(false)}
+                  disabled={addingToCart || product.stock === 0}
+                  loading={addingToCart}
+                >
+                  {!addingToCart && <ShoppingCart size={16} />}
+                  {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                </AddToCartBtn>
 
-              <IconBtn onClick={handleWishlist} active={isWishlisted} title="Wishlist">
-                <Heart size={16} fill={isWishlisted ? 'currentColor' : 'none'} />
-              </IconBtn>
+                <BuyNowBtn
+                  onClick={() => handleAddToCart(true)}
+                  disabled={addingToCart || product.stock === 0}
+                >
+                  Buy Now
+                </BuyNowBtn>
+              </div>
 
-              <IconBtn title="Share">
-                <Share2 size={15} />
-              </IconBtn>
+              {/* Row 2: Wishlist + Share (icon pair) */}
+              <div style={{ display: 'flex', gap: '0.65rem' }}>
+                <IconBtn
+                  onClick={handleWishlist}
+                  active={isWishlisted}
+                  title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                  style={{ flex: 1 }}
+                >
+                  <Heart size={16} fill={isWishlisted ? 'currentColor' : 'none'} />
+                  <span style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.04em' }}>
+                    {isWishlisted ? 'Wishlisted' : 'Wishlist'}
+                  </span>
+                </IconBtn>
+
+                <IconBtn title="Share" style={{ width: 54, flex: 'none' }}>
+                  <Share2 size={15} />
+                </IconBtn>
+              </div>
             </div>
 
             {/* Stock status */}
