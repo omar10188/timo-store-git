@@ -91,11 +91,14 @@ export default function CheckoutPage() {
 
       toast.success('Order placed successfully! Redirecting to WhatsApp...');
 
-      // 4. Auto-Open WhatsApp in new tab / redirect
+      // 4. Auto-Open WhatsApp in new tab / window
       if (whatsappUrl) {
-        setTimeout(() => {
-          window.open(whatsappUrl, '_blank');
-        }, 1200);
+        try {
+          window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        } catch {
+          // Fallback to location redirect if popup blocked
+          window.location.href = whatsappUrl;
+        }
       }
     } catch (err: any) {
       console.error('Order placement error:', err);

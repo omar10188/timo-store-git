@@ -177,10 +177,10 @@ const createOrder = asyncHandler(async (req, res, next) => {
   }
 
   // 7. Generate Formatted WhatsApp Invoice Message & URL
-  const rawAdminPhone = process.env.WHATSAPP_NUMBER || process.env.ADMIN_PHONE || "201224623561";
+  const rawAdminPhone = process.env.WHATSAPP_NUMBER || process.env.ADMIN_PHONE || "201008313604";
   const whatsappNumber = rawAdminPhone.replace(/\D/g, "");
   const orderIdShort = order._id.toString().slice(-6).toUpperCase();
-  const dateStr = new Date().toLocaleDateString("ar-EG");
+  const dateStr = new Date().toLocaleDateString("en-GB");
 
   const itemsListFormatted = orderItems
     .map((i) => `• ${i.quantity}x ${i.name} (EGP ${(i.price * i.quantity).toFixed(2)})`)
