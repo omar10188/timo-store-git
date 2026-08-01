@@ -7,46 +7,51 @@
 /* ─── CSS Custom Properties — Dark Mode (default) ───────────────────────────── */
 :root,
 html.dark {
-  /* Backgrounds */
-  --color-bg: #0a0a0a;
-  --color-bg-secondary: #111111;
-  --color-bg-card: #161616;
-  --color-bg-elevated: #1e1e1e;
+  /* ── Backgrounds — near-black luxury palette ── */
+  --color-bg: #0f0f0f;
+  --color-bg-secondary: #141414;
+  --color-bg-card: #1a1a1a;
+  --color-bg-elevated: #242424;
 
-  /* Borders */
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-gold: rgba(212, 168, 83, 0.30);
+  /* ── Borders — ultra-subtle white lines ── */
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-border-gold: rgba(255, 255, 255, 0.18);
 
-  /* Gold accent palette */
-  --color-gold: #d4a853;
-  --color-gold-light: #e8c97a;
-  --color-gold-dark: #b8892f;
-  --color-gold-muted: rgba(212, 168, 83, 0.15);
+  /* ── White accent (luxury minimal) ── */
+  --color-accent: #ffffff;
+  --color-accent-muted: rgba(255, 255, 255, 0.08);
 
-  /* Text */
-  --color-text-primary: #f5f0e8;
-  --color-text-secondary: #a09880;
-  --color-text-muted: #5a5448;
+  /* ── Gold accent palette (kept for highlights only) ── */
+  --color-gold: #c8a96e;
+  --color-gold-light: #dcc08a;
+  --color-gold-dark: #a88840;
+  --color-gold-muted: rgba(200, 169, 110, 0.12);
 
-  /* Status */
+  /* ── Text ── */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #aaaaaa;
+  --color-text-muted: #555555;
+
+  /* ── Status ── */
   --color-success: #4caf7d;
   --color-error: #e05c5c;
   --color-warning: #f0a04b;
   --color-info: #4b9cf0;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
-  --shadow-gold: 0 0 20px rgba(212, 168, 83, 0.20);
-  --shadow-gold-lg: 0 0 40px rgba(212, 168, 83, 0.30);
+  /* ── Shadows — deep, cinematic ── */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.75);
+  --shadow-gold: 0 0 24px rgba(200, 169, 110, 0.18);
+  --shadow-gold-lg: 0 0 48px rgba(200, 169, 110, 0.28);
+  --shadow-white: 0 0 24px rgba(255, 255, 255, 0.08);
 
-  /* Glassmorphism */
-  --glass-bg: rgba(22, 22, 22, 0.80);
+  /* ── Glassmorphism ── */
+  --glass-bg: rgba(26, 26, 26, 0.85);
 
-  /* Scrollbar */
-  --scrollbar-track: #0a0a0a;
-  --scrollbar-thumb: rgba(255, 255, 255, 0.08);
+  /* ── Scrollbar ── */
+  --scrollbar-track: #0f0f0f;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.06);
 }
 
 /* ─── CSS Custom Properties — Light Mode ─────────────────────────────────────── */
@@ -108,11 +113,11 @@ html.light {
   --space-2xl: 3rem;
   --space-3xl: 4rem;
 
-  /* Border Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  /* Border Radius — luxury rounded */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
 
   /* Transitions */
@@ -209,33 +214,50 @@ input, textarea, select {
   border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   transition: all var(--transition-base);
   white-space: nowrap;
   user-select: none;
 }
 
+/* PRIMARY — white fill with black text (luxury minimal) */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark));
-  color: var(--color-bg);
-  box-shadow: var(--shadow-gold);
+  background: #ffffff;
+  color: #0f0f0f;
+  border: none;
+  box-shadow: 0 4px 16px rgba(255,255,255,0.12);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold));
-  box-shadow: var(--shadow-gold-lg);
+  background: #f0f0f0;
+  box-shadow: 0 6px 24px rgba(255,255,255,0.18);
   transform: translateY(-1px);
 }
 
+/* SECONDARY — outlined white border */
 .btn-secondary {
   background: transparent;
-  color: var(--color-gold);
-  border: 1px solid var(--color-border-gold);
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
 }
 
 .btn-secondary:hover {
-  background: var(--color-gold-muted);
-  border-color: var(--color-gold);
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.5);
+}
+
+/* Keep a gold variant for special CTAs */
+.btn-gold {
+  background: var(--color-gold);
+  color: #0f0f0f;
+  border: none;
+  box-shadow: var(--shadow-gold);
+}
+
+.btn-gold:hover {
+  background: var(--color-gold-light);
+  box-shadow: var(--shadow-gold-lg);
+  transform: translateY(-1px);
 }
 
 .btn-ghost {
@@ -245,21 +267,21 @@ input, textarea, select {
 
 .btn-ghost:hover {
   color: var(--color-text-primary);
-  background: var(--color-border);
+  background: rgba(255,255,255,0.05);
 }
 
 .btn-danger {
-  background: rgba(224, 92, 92, 0.12);
+  background: rgba(224, 92, 92, 0.10);
   color: var(--color-error);
-  border: 1px solid rgba(224, 92, 92, 0.25);
+  border: 1px solid rgba(224, 92, 92, 0.20);
 }
 
 .btn-danger:hover {
-  background: rgba(224, 92, 92, 0.20);
+  background: rgba(224, 92, 92, 0.18);
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none !important;
 }
@@ -273,8 +295,8 @@ input, textarea, select {
 }
 
 .card:hover {
-  border-color: var(--color-border-gold);
-  box-shadow: var(--shadow-gold);
+  border-color: rgba(255,255,255,0.15);
+  box-shadow: var(--shadow-md);
 }
 
 /* ─── Input System ───────────────────────────────────────────────────────────── */

@@ -15,7 +15,6 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
-
 function getImageUrl(src: string) {
   if (!src) return '';
   if (src.startsWith('http')) return src;
@@ -31,25 +30,65 @@ interface Review {
   createdAt: string;
 }
 
-// ── Accordion Component ──────────────────────────────────────────────────────
-function Accordion({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+/* ── Design tokens (scoped to this page) ─────────────────────────── */
+const DS = {
+  bg: '#0f0f0f',
+  card: '#1a1a1a',
+  elevated: '#242424',
+  border: 'rgba(255,255,255,0.07)',
+  borderHover: 'rgba(255,255,255,0.18)',
+  textPrimary: '#ffffff',
+  textSecondary: '#aaaaaa',
+  textMuted: '#555555',
+  gold: '#c8a96e',
+  goldMuted: 'rgba(200,169,110,0.12)',
+  accent: '#ffffff',         // white accent buttons
+  accentText: '#0f0f0f',     // black text on white
+  shadowSm: '0 2px 8px rgba(0,0,0,0.55)',
+  shadowMd: '0 6px 24px rgba(0,0,0,0.7)',
+  shadowLg: '0 16px 48px rgba(0,0,0,0.85)',
+  radius: '18px',
+  radiusMd: '12px',
+  radiusSm: '8px',
+};
+
+/* ── Accordion ───────────────────────────────────────────────────── */
+function Accordion({
+  title, children, defaultOpen = false,
+}: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ border: '1px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
+    <div style={{
+      border: `1px solid ${DS.border}`,
+      borderRadius: DS.radiusMd,
+      overflow: 'hidden',
+    }}>
       <button
         onClick={() => setOpen(!open)}
         style={{
-          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0.9rem 1.25rem', background: 'var(--color-bg-elevated)',
-          border: 'none', cursor: 'pointer', color: 'var(--color-text-primary)',
-          fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.02em',
+          width: '100%', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.9rem 1.2rem',
+          background: DS.elevated,
+          border: 'none', cursor: 'pointer',
+          color: DS.textPrimary, fontSize: '0.88rem',
+          fontWeight: 600, letterSpacing: '0.04em',
+          fontFamily: 'var(--font-body)',
         }}
       >
         <span>{title}</span>
-        {open ? <ChevronUp size={16} style={{ color: 'var(--color-text-muted)' }} /> : <ChevronDown size={16} style={{ color: 'var(--color-text-muted)' }} />}
+        {open
+          ? <ChevronUp size={15} style={{ color: DS.textMuted }} />
+          : <ChevronDown size={15} style={{ color: DS.textMuted }} />}
       </button>
       {open && (
-        <div style={{ padding: '1rem 1.25rem', background: 'var(--color-bg-card)', color: 'var(--color-text-secondary)', fontSize: '0.875rem', lineHeight: 1.8 }}>
+        <div style={{
+          padding: '1rem 1.2rem',
+          background: DS.card,
+          color: DS.textSecondary,
+          fontSize: '0.875rem',
+          lineHeight: 1.8,
+        }}>
           {children}
         </div>
       )}
@@ -57,22 +96,105 @@ function Accordion({ title, children, defaultOpen = false }: { title: string; ch
   );
 }
 
-// ── Rating Bar ───────────────────────────────────────────────────────────────
+/* ── Rating Bar ──────────────────────────────────────────────────── */
 function RatingBar({ star, count, total }: { star: number; count: number; total: number }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.8rem' }}>
-      <span style={{ color: 'var(--color-text-muted)', minWidth: 8 }}>{star}</span>
-      <Star size={11} style={{ fill: 'var(--color-gold)', color: 'var(--color-gold)', flexShrink: 0 }} />
-      <div style={{ flex: 1, height: 6, borderRadius: 99, background: 'var(--color-border)', overflow: 'hidden' }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: 'var(--color-gold)', borderRadius: 99, transition: 'width 0.6s ease' }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.78rem' }}>
+      <span style={{ color: DS.textMuted, minWidth: 8 }}>{star}</span>
+      <Star size={10} style={{ fill: DS.gold, color: DS.gold, flexShrink: 0 }} />
+      <div style={{
+        flex: 1, height: 5, borderRadius: 99,
+        background: DS.border, overflow: 'hidden',
+      }}>
+        <div style={{
+          width: `${pct}%`, height: '100%',
+          background: DS.gold, borderRadius: 99,
+          transition: 'width 0.7s ease',
+        }} />
       </div>
-      <span style={{ color: 'var(--color-text-muted)', minWidth: 24, textAlign: 'right' }}>{count}</span>
+      <span style={{ color: DS.textMuted, minWidth: 24, textAlign: 'right' }}>{count}</span>
     </div>
   );
 }
 
-// ── Main Component ───────────────────────────────────────────────────────────
+/* ── White action button ─────────────────────────────────────────── */
+function WhiteBtn({
+  children, onClick, disabled, outline = false, style = {},
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  outline?: boolean;
+  style?: React.CSSProperties;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const base: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+    height: 50, borderRadius: DS.radiusMd,
+    fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.06em',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.4 : 1,
+    transition: 'all 0.22s ease',
+    fontFamily: 'var(--font-body)',
+    border: 'none',
+  };
+  const solidStyle: React.CSSProperties = {
+    ...base,
+    background: hovered && !disabled ? '#e8e8e8' : DS.accent,
+    color: DS.accentText,
+    boxShadow: hovered && !disabled ? '0 6px 22px rgba(255,255,255,0.20)' : '0 4px 14px rgba(255,255,255,0.10)',
+    transform: hovered && !disabled ? 'translateY(-1px)' : 'none',
+  };
+  const outlineStyle: React.CSSProperties = {
+    ...base,
+    background: hovered && !disabled ? 'rgba(255,255,255,0.06)' : 'transparent',
+    color: DS.accent,
+    border: `1.5px solid ${hovered && !disabled ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.22)'}`,
+  };
+  return (
+    <button
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ ...(outline ? outlineStyle : solidStyle), ...style }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ── Icon button ─────────────────────────────────────────────────── */
+function IconBtn({
+  children, onClick, active = false, title = '',
+}: {
+  children: React.ReactNode; onClick?: () => void; active?: boolean; title?: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: 50, height: 50, borderRadius: DS.radiusMd,
+        border: `1.5px solid ${active ? DS.gold : hovered ? 'rgba(255,255,255,0.3)' : DS.border}`,
+        background: active ? DS.goldMuted : hovered ? 'rgba(255,255,255,0.04)' : DS.elevated,
+        color: active ? DS.gold : hovered ? DS.textPrimary : DS.textMuted,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer', transition: 'all 0.2s ease', flexShrink: 0,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN PAGE
+═══════════════════════════════════════════════════════════════════ */
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -156,88 +278,127 @@ export default function ProductDetailPage() {
     }
   };
 
-  if (loading) return <div style={{ paddingTop: '4rem' }}><LoadingSpinner text="Loading product..." /></div>;
+  if (loading) return <div style={{ paddingTop: '4rem', background: DS.bg, minHeight: '100vh' }}><LoadingSpinner text="Loading product..." /></div>;
   if (!product) return null;
 
   const displayPrice = product.salePrice || product.price;
   const allImages = [product.image, ...(product.images || [])].filter(Boolean);
-
-  // Compute rating distribution
   const starCounts = [5, 4, 3, 2, 1].map((star) => ({
     star,
     count: reviews.filter((r) => Math.round(r.rating) === star).length,
   }));
 
   return (
-    <div style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
-      <div className="container" style={{ padding: '2rem var(--container-padding)', maxWidth: 1200 }}>
+    <div style={{ background: DS.bg, minHeight: '100vh', color: DS.textPrimary }}>
 
-        {/* ── Breadcrumb / Back ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+      {/* ══ Ambient top glow ══════════════════════════════════════ */}
+      <div style={{
+        position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+        width: 700, height: 400, borderRadius: '50%', pointerEvents: 'none', zIndex: 0,
+        background: 'radial-gradient(ellipse at top, rgba(200,169,110,0.06) 0%, transparent 70%)',
+      }} />
+
+      <div className="container" style={{ position: 'relative', zIndex: 1, padding: '2rem var(--container-padding)', maxWidth: 1200 }}>
+
+        {/* ── Breadcrumb ── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          marginBottom: '2.5rem', fontSize: '0.78rem', color: DS.textMuted,
+        }}>
           <button
             onClick={() => router.back()}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '0.8rem' }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.35rem',
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: DS.textMuted, fontSize: '0.78rem',
+              fontFamily: 'var(--font-body)',
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = DS.textSecondary; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = DS.textMuted; }}
           >
-            <ArrowLeft size={14} /> Home
+            <ArrowLeft size={13} /> Home
           </button>
           <span>/</span>
-          <span style={{ color: 'var(--color-text-secondary)' }}>Products</span>
+          <span style={{ color: DS.textMuted }}>Products</span>
           <span>/</span>
-          <span style={{ color: 'var(--color-text-primary)' }}>{product.name}</span>
+          <span style={{ color: DS.textSecondary }}>{product.name}</span>
         </div>
 
-        {/* ═══════════════════════════════════════════════════
-            TOP SECTION: Image Left + Details Right
-        ═══════════════════════════════════════════════════ */}
+        {/* ═════════════════════════════════════════════════════════
+            TOP SECTION — Image Left · Details Right
+        ═════════════════════════════════════════════════════════ */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
-          gap: '3rem',
+          gap: '3.5rem',
           marginBottom: '2.5rem',
           alignItems: 'start',
-        }}
-          className="product-top-grid"
-        >
-          {/* ── LEFT: Main Image ── */}
+        }} className="pdp-top">
+
+          {/* ── Left: Main Product Image ── */}
           <div>
             <div style={{
               aspectRatio: '1 / 1',
-              borderRadius: 20,
+              borderRadius: 24,
               overflow: 'hidden',
-              background: 'var(--color-bg-elevated)',
-              border: '1px solid var(--color-border)',
-              boxShadow: 'var(--shadow-lg)',
+              background: DS.card,
+              border: `1px solid ${DS.border}`,
+              boxShadow: DS.shadowLg,
               position: 'relative',
             }}>
               {/* Discount badge */}
               {product.discount > 0 && (
                 <div style={{
                   position: 'absolute', top: 16, left: 16, zIndex: 2,
-                  background: 'var(--color-gold)', color: 'var(--color-bg)',
-                  borderRadius: 8, padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700,
+                  background: DS.accent, color: DS.accentText,
+                  borderRadius: DS.radiusSm, padding: '4px 12px',
+                  fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.06em',
                 }}>
                   {product.discount}% OFF
                 </div>
               )}
+
+              {/* Featured badge */}
+              {product.isFeatured && (
+                <div style={{
+                  position: 'absolute', top: 16, right: 16, zIndex: 2,
+                  background: DS.goldMuted,
+                  border: `1px solid ${DS.gold}`,
+                  color: DS.gold,
+                  borderRadius: DS.radiusSm, padding: '4px 12px',
+                  fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em',
+                }}>
+                  ✦ Featured
+                </div>
+              )}
+
               <img
                 src={getImageUrl(allImages[selectedImage] || '')}
                 alt={product.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }}
-                onError={(e) => {
-                  e.currentTarget.src = `https://placehold.co/700x700/161616/d4a853?text=${encodeURIComponent(product.name[0])}`;
+                style={{
+                  width: '100%', height: '100%', objectFit: 'cover',
+                  transition: 'transform 0.5s cubic-bezier(0.16,1,0.3,1)',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.04)'; }}
+                onError={(e) => {
+                  e.currentTarget.src = `https://placehold.co/700x700/1a1a1a/c8a96e?text=${encodeURIComponent(product.name[0])}`;
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
               />
             </div>
           </div>
 
-          {/* ── RIGHT: Product Details ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* ── Right: All Product Details ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
 
             {/* Brand */}
             {product.brand && (
-              <span style={{ fontSize: '0.72rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-gold)', fontWeight: 700 }}>
+              <span style={{
+                fontSize: '0.7rem', letterSpacing: '0.16em',
+                textTransform: 'uppercase', color: DS.gold,
+                fontWeight: 700,
+              }}>
                 {product.brand}
               </span>
             )}
@@ -245,11 +406,9 @@ export default function ProductDetailPage() {
             {/* Name */}
             <h1 style={{
               fontFamily: 'var(--font-heading)',
-              fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',
-              fontWeight: 700,
-              lineHeight: 1.15,
-              color: 'var(--color-text-primary)',
-              margin: 0,
+              fontSize: 'clamp(1.7rem, 3.2vw, 2.5rem)',
+              fontWeight: 700, lineHeight: 1.1,
+              color: DS.textPrimary, margin: 0,
             }}>
               {product.name}
             </h1>
@@ -257,25 +416,52 @@ export default function ProductDetailPage() {
             {/* Rating row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <StarRating rating={product.rating || 0} size={15} />
-              <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                {product.rating?.toFixed(1)} &nbsp;·&nbsp; {product.numReviews || 0} reviews
+              <span style={{ fontSize: '0.78rem', color: DS.textMuted }}>
+                {product.rating?.toFixed(1)} · {product.numReviews || 0} reviews
               </span>
-              {product.stock === 0 ? (
-                <span style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-error)', background: 'rgba(224,92,92,0.12)', borderRadius: 6, padding: '2px 10px' }}>Out of Stock</span>
-              ) : (product.stock ?? 0) <= 5 ? (
-                <span style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-warning)', background: 'rgba(240,160,75,0.12)', borderRadius: 6, padding: '2px 10px' }}>Only {product.stock} left</span>
-              ) : null}
+              {product.stock === 0 && (
+                <span style={{
+                  marginLeft: 'auto', fontSize: '0.72rem', fontWeight: 700,
+                  color: '#e05c5c', background: 'rgba(224,92,92,0.10)',
+                  borderRadius: 20, padding: '3px 12px',
+                }}>Out of Stock</span>
+              )}
+              {(product.stock ?? 0) > 0 && (product.stock ?? 0) <= 5 && (
+                <span style={{
+                  marginLeft: 'auto', fontSize: '0.72rem', fontWeight: 700,
+                  color: '#f0a04b', background: 'rgba(240,160,75,0.10)',
+                  borderRadius: 20, padding: '3px 12px',
+                }}>Only {product.stock} left</span>
+              )}
             </div>
 
             {/* Price */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
-              <span style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-gold)', letterSpacing: '-0.02em' }}>
+            <div style={{
+              display: 'flex', alignItems: 'baseline', gap: '0.75rem',
+              padding: '1rem 1.2rem',
+              background: DS.card,
+              border: `1px solid ${DS.border}`,
+              borderRadius: DS.radiusMd,
+            }}>
+              <span style={{
+                fontSize: '2.1rem', fontWeight: 800,
+                color: DS.textPrimary, letterSpacing: '-0.02em',
+              }}>
                 EGP {displayPrice.toFixed(2)}
               </span>
               {product.discount > 0 && (
-                <span style={{ fontSize: '1rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>
-                  EGP {product.price.toFixed(2)}
-                </span>
+                <>
+                  <span style={{ fontSize: '1rem', color: DS.textMuted, textDecoration: 'line-through' }}>
+                    EGP {product.price.toFixed(2)}
+                  </span>
+                  <span style={{
+                    marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 700,
+                    color: DS.accentText, background: DS.accent,
+                    borderRadius: 20, padding: '3px 12px',
+                  }}>
+                    Save {product.discount}%
+                  </span>
+                </>
               )}
             </div>
 
@@ -284,32 +470,18 @@ export default function ProductDetailPage() {
               {product.description || 'No description available.'}
             </Accordion>
 
-            {/* Main Notes / Tags */}
+            {/* Main Notes */}
             {product.tags?.length > 0 && (
               <div>
-                <p style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.6rem' }}>Main Notes</p>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <p style={{
+                  fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em',
+                  textTransform: 'uppercase', color: DS.textMuted, marginBottom: '0.65rem',
+                }}>
+                  Main Notes
+                </p>
+                <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
                   {product.tags.map((tag: string) => (
-                    <span key={tag} style={{
-                      padding: '4px 14px', borderRadius: 20,
-                      border: '1px solid var(--color-border)',
-                      background: 'var(--color-bg-elevated)',
-                      color: 'var(--color-text-secondary)',
-                      fontSize: '0.78rem', fontWeight: 500,
-                      cursor: 'default',
-                      transition: 'border-color 0.2s, color 0.2s',
-                    }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gold)';
-                        (e.currentTarget as HTMLElement).style.color = 'var(--color-gold)';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
-                        (e.currentTarget as HTMLElement).style.color = 'var(--color-text-secondary)';
-                      }}
-                    >
-                      {tag}
-                    </span>
+                    <NoteTag key={tag}>{tag}</NoteTag>
                   ))}
                 </div>
               </div>
@@ -317,144 +489,75 @@ export default function ProductDetailPage() {
 
             {/* Quantity Selector */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>Quantity</span>
+              <span style={{ fontSize: '0.78rem', color: DS.textMuted, fontWeight: 600 }}>Quantity</span>
               <div style={{
                 display: 'flex', alignItems: 'center',
-                border: '1px solid var(--color-border)',
-                borderRadius: 10, overflow: 'hidden',
+                border: `1px solid ${DS.border}`,
+                borderRadius: DS.radiusSm, overflow: 'hidden',
+                background: DS.card,
               }}>
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                  style={{
-                    width: 38, height: 38, background: 'var(--color-bg-elevated)',
-                    border: 'none', cursor: 'pointer', color: 'var(--color-text-primary)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'background 0.2s',
-                  }}
-                >
-                  <Minus size={13} />
-                </button>
+                <QuantityBtn onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}>
+                  <Minus size={12} />
+                </QuantityBtn>
                 <span style={{
-                  width: 44, textAlign: 'center', fontWeight: 700,
-                  color: 'var(--color-text-primary)', fontSize: '0.95rem',
-                  background: 'var(--color-bg-card)',
-                  height: 38, lineHeight: '38px',
+                  width: 46, textAlign: 'center', fontWeight: 800,
+                  color: DS.textPrimary, fontSize: '0.95rem',
+                  height: 40, lineHeight: '40px',
+                  background: DS.elevated,
                 }}>
                   {quantity}
                 </span>
-                <button
-                  onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
-                  disabled={quantity >= (product.stock || 99)}
-                  style={{
-                    width: 38, height: 38, background: 'var(--color-bg-elevated)',
-                    border: 'none', cursor: 'pointer', color: 'var(--color-text-primary)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'background 0.2s',
-                  }}
-                >
-                  <Plus size={13} />
-                </button>
+                <QuantityBtn onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))} disabled={quantity >= (product.stock || 99)}>
+                  <Plus size={12} />
+                </QuantityBtn>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              {/* Add to Cart */}
-              <button
+            <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
+              <WhiteBtn
+                outline
                 onClick={() => handleAddToCart(false)}
                 disabled={addingToCart || product.stock === 0}
-                style={{
-                  flex: 1, height: 48, borderRadius: 12,
-                  border: '1.5px solid var(--color-gold)',
-                  background: 'transparent', color: 'var(--color-gold)',
-                  fontWeight: 700, fontSize: '0.875rem', letterSpacing: '0.04em',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                  transition: 'all 0.25s ease',
-                }}
-                onMouseEnter={(e) => {
-                  if (!(e.currentTarget as HTMLButtonElement).disabled) {
-                    (e.currentTarget as HTMLElement).style.background = 'var(--color-gold)';
-                    (e.currentTarget as HTMLElement).style.color = 'var(--color-bg)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--color-gold)';
-                }}
+                style={{ flex: 1 }}
               >
-                {addingToCart ? (
-                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid currentColor', borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite' }} />
-                ) : <ShoppingCart size={16} />}
+                {addingToCart
+                  ? <div style={{ width: 15, height: 15, borderRadius: '50%', border: '2px solid currentColor', borderTopColor: 'transparent', animation: 'pdp-spin 0.6s linear infinite' }} />
+                  : <ShoppingCart size={15} />}
                 {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-              </button>
+              </WhiteBtn>
 
-              {/* Buy Now */}
-              <button
+              <WhiteBtn
                 onClick={() => handleAddToCart(true)}
                 disabled={addingToCart || product.stock === 0}
-                style={{
-                  flex: 1, height: 48, borderRadius: 12,
-                  border: 'none', background: 'var(--color-gold)',
-                  color: '#0a0a0a', fontWeight: 700, fontSize: '0.875rem',
-                  letterSpacing: '0.04em', cursor: 'pointer',
-                  transition: 'opacity 0.2s, transform 0.15s',
-                  boxShadow: '0 4px 14px rgba(212,168,83,0.35)',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.88'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+                style={{ flex: 1 }}
               >
                 Buy Now
-              </button>
+              </WhiteBtn>
 
-              {/* Wishlist */}
-              <button
-                onClick={handleWishlist}
-                title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-                style={{
-                  width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-                  border: `1.5px solid ${isWishlisted ? 'var(--color-gold)' : 'var(--color-border)'}`,
-                  background: isWishlisted ? 'var(--color-gold-muted)' : 'var(--color-bg-elevated)',
-                  color: isWishlisted ? 'var(--color-gold)' : 'var(--color-text-muted)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <Heart size={17} fill={isWishlisted ? 'currentColor' : 'none'} />
-              </button>
+              <IconBtn onClick={handleWishlist} active={isWishlisted} title="Wishlist">
+                <Heart size={16} fill={isWishlisted ? 'currentColor' : 'none'} />
+              </IconBtn>
 
-              {/* Share */}
-              <button
-                title="Share"
-                style={{
-                  width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-                  border: '1.5px solid var(--color-border)',
-                  background: 'var(--color-bg-elevated)',
-                  color: 'var(--color-text-muted)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gold)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; }}
-              >
-                <Share2 size={16} />
-              </button>
+              <IconBtn title="Share">
+                <Share2 size={15} />
+              </IconBtn>
             </div>
 
             {/* Stock status */}
             {(product.stock ?? 0) > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem' }}>
                 {(product.stock ?? 0) <= 5 ? (
                   <>
-                    <Sparkles size={13} style={{ color: 'var(--color-warning)' }} />
-                    <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>
+                    <Sparkles size={12} style={{ color: '#f0a04b' }} />
+                    <span style={{ color: '#f0a04b', fontWeight: 600 }}>
                       Hurry! Only {product.stock} left in stock
                     </span>
                   </>
                 ) : (
                   <>
-                    <Check size={13} style={{ color: 'var(--color-success)' }} />
-                    <span style={{ color: 'var(--color-success)' }}>
+                    <Check size={12} style={{ color: '#4caf7d' }} />
+                    <span style={{ color: '#4caf7d' }}>
                       {product.stock} in stock — ready to ship
                     </span>
                   </>
@@ -462,25 +565,24 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Delivery Accordion */}
+            {/* Delivery Options Accordion */}
             <Accordion title="Delivery Options">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
                 {[
-                  { icon: <Tag size={16} />, label: 'Discount', val: 'Save 15%' },
-                  { icon: <CreditCard size={16} />, label: 'Payment', val: 'Cash on Delivery' },
-                  { icon: <Truck size={16} />, label: 'Delivery Time', val: '3-4 Working Days' },
-                  { icon: <RotateCcw size={16} />, label: 'Return & Warranty', val: '7 Days easy return' },
+                  { icon: <Tag size={15} />, label: 'Discount', val: 'Save 15%' },
+                  { icon: <CreditCard size={15} />, label: 'Payment', val: 'Cash on Delivery' },
+                  { icon: <Truck size={15} />, label: 'Delivery Time', val: '3-4 Working Days' },
+                  { icon: <RotateCcw size={15} />, label: 'Return & Warranty', val: '7 Days easy return' },
                 ].map(({ icon, label, val }) => (
                   <div key={label} style={{
                     display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
-                    padding: '0.75rem', borderRadius: 10,
-                    background: 'var(--color-bg-elevated)',
-                    border: '1px solid var(--color-border)',
+                    padding: '0.75rem', borderRadius: DS.radiusSm,
+                    background: DS.elevated, border: `1px solid ${DS.border}`,
                   }}>
-                    <span style={{ color: 'var(--color-gold)', flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                    <span style={{ color: DS.gold, flexShrink: 0, marginTop: 1 }}>{icon}</span>
                     <div>
-                      <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginBottom: 2 }}>{label}</p>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{val}</p>
+                      <p style={{ fontSize: '0.68rem', color: DS.textMuted, marginBottom: 2 }}>{label}</p>
+                      <p style={{ fontSize: '0.78rem', fontWeight: 700, color: DS.textPrimary }}>{val}</p>
                     </div>
                   </div>
                 ))}
@@ -489,153 +591,168 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════
-            THUMBNAILS STRIP (below main section)
-        ═══════════════════════════════════════════════════ */}
+        {/* ═════════════════════════════════════════════════════════
+            THUMBNAILS STRIP
+        ═════════════════════════════════════════════════════════ */}
         {allImages.length > 1 && (
-          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '3.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '4rem', flexWrap: 'wrap' }}>
             {allImages.map((img: string, i: number) => (
-              <button
+              <Thumbnail
                 key={i}
+                src={getImageUrl(img)}
+                alt={`View ${i + 1}`}
+                active={i === selectedImage}
                 onClick={() => setSelectedImage(i)}
-                style={{
-                  width: 90, height: 90, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
-                  border: `2px solid ${i === selectedImage ? 'var(--color-gold)' : 'var(--color-border)'}`,
-                  cursor: 'pointer', background: 'none', padding: 0,
-                  boxShadow: i === selectedImage ? 'var(--shadow-gold)' : 'var(--shadow-sm)',
-                  transition: 'border-color 0.2s, box-shadow 0.2s, transform 0.15s',
-                  transform: i === selectedImage ? 'scale(1.05)' : 'scale(1)',
-                }}
-              >
-                <img
-                  src={getImageUrl(img)}
-                  alt={`View ${i + 1}`}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => {
-                    e.currentTarget.src = `https://placehold.co/90x90/161616/d4a853?text=${encodeURIComponent(product.name[0])}`;
-                  }}
-                />
-              </button>
+                fallback={product.name[0]}
+              />
             ))}
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════
-            RATING & REVIEWS SECTION
-        ═══════════════════════════════════════════════════ */}
-        <section style={{ marginBottom: '4rem' }}>
-          <h2 style={{
-            fontFamily: 'var(--font-heading)', fontSize: '1.6rem', fontWeight: 700,
-            marginBottom: '2rem', color: 'var(--color-text-primary)',
-            borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem',
+        {/* ═════════════════════════════════════════════════════════
+            RATING & REVIEWS
+        ═════════════════════════════════════════════════════════ */}
+        <section style={{ marginBottom: '5rem' }}>
+          {/* Section header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: '2.5rem',
           }}>
-            Rating &amp; Reviews
-          </h2>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '3rem', alignItems: 'start' }}>
-
-            {/* ── Left: Big Number + Bars ── */}
-            <div style={{
-              background: 'var(--color-bg-card)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 16, padding: '1.75rem',
-              boxShadow: 'var(--shadow-sm)',
+            <h2 style={{
+              fontFamily: 'var(--font-heading)', fontSize: '1.65rem', fontWeight: 700,
+              color: DS.textPrimary, margin: 0,
             }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.4rem', marginBottom: '0.25rem' }}>
-                <span style={{ fontSize: '4rem', fontWeight: 800, lineHeight: 1, color: 'var(--color-text-primary)' }}>
+              Rating &amp; Reviews
+            </h2>
+            <div style={{ height: 1, flex: 1, background: DS.border, marginLeft: '1.5rem' }} />
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(200px, 280px) 1fr',
+            gap: '2.5rem',
+            alignItems: 'start',
+          }} className="pdp-reviews-grid">
+
+            {/* ── Rating Summary Card ── */}
+            <div style={{
+              background: DS.card,
+              border: `1px solid ${DS.border}`,
+              borderRadius: DS.radius,
+              padding: '1.75rem',
+              boxShadow: DS.shadowMd,
+            }}>
+              {/* Big number */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.3rem', marginBottom: '0.4rem' }}>
+                <span style={{
+                  fontSize: '4.5rem', fontWeight: 900, lineHeight: 1,
+                  color: DS.textPrimary, letterSpacing: '-0.04em',
+                }}>
                   {(product.rating || 0).toFixed(1)}
                 </span>
-                <span style={{ fontSize: '1rem', color: 'var(--color-text-muted)', marginBottom: '0.6rem' }}>/5</span>
+                <span style={{ fontSize: '1.1rem', color: DS.textMuted, marginBottom: '0.7rem' }}>/5</span>
               </div>
-              <div style={{ marginBottom: '0.5rem' }}>
-                <StarRating rating={product.rating || 0} size={18} />
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
+              <StarRating rating={product.rating || 0} size={17} />
+              <p style={{ fontSize: '0.75rem', color: DS.textMuted, margin: '0.75rem 0 1.5rem' }}>
                 {reviews.length} New Reviews
               </p>
 
-              {/* Star distribution bars */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {/* Star bars */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 {starCounts.map(({ star, count }) => (
                   <RatingBar key={star} star={star} count={count} total={reviews.length} />
                 ))}
               </div>
             </div>
 
-            {/* ── Right: Write Review Panel + Reviews List ── */}
+            {/* ── Right: Write Review + List ── */}
             <div>
-              {/* Write Review CTA */}
+              {/* Write Review CTA Card */}
               <div style={{
-                background: 'var(--color-bg-card)', border: '1px solid var(--color-border)',
-                borderRadius: 16, padding: '1.5rem', marginBottom: '1.5rem',
-                boxShadow: 'var(--shadow-sm)',
+                background: DS.card,
+                border: `1px solid ${DS.border}`,
+                borderRadius: DS.radius,
+                padding: '1.5rem',
+                marginBottom: '1.25rem',
+                boxShadow: DS.shadowSm,
               }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '0.3rem' }}>
+                <h3 style={{
+                  fontSize: '1rem', fontWeight: 700,
+                  color: DS.textPrimary, marginBottom: '0.25rem',
+                  fontFamily: 'var(--font-heading)',
+                }}>
                   Review this product
                 </h3>
-                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+                <p style={{ fontSize: '0.78rem', color: DS.textMuted, marginBottom: '1.1rem' }}>
                   Share your thoughts with other customers
                 </p>
 
                 {!showReviewForm ? (
-                  <button
+                  <WhiteBtn
+                    outline
                     onClick={() => {
                       if (!isAuthenticated) { toast.error('Please sign in to leave a review'); return; }
                       setShowReviewForm(true);
                     }}
-                    style={{
-                      width: '100%', height: 42, borderRadius: 10,
-                      border: '1.5px solid var(--color-border)',
-                      background: 'transparent', color: 'var(--color-text-primary)',
-                      fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
-                      transition: 'border-color 0.2s',
-                    }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gold)'; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; }}
+                    style={{ width: '100%' }}
                   >
                     Write a customer review
-                  </button>
+                  </WhiteBtn>
                 ) : (
                   <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
-                      <label style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-                        Your Rating
+                      <label style={{
+                        fontSize: '0.75rem', color: DS.textMuted,
+                        display: 'block', marginBottom: '0.5rem', fontWeight: 600, letterSpacing: '0.06em',
+                      }}>
+                        YOUR RATING
                       </label>
                       <StarRating rating={newRating} interactive onChange={setNewRating} size={24} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-                        Your Review
+                      <label style={{
+                        fontSize: '0.75rem', color: DS.textMuted,
+                        display: 'block', marginBottom: '0.5rem', fontWeight: 600, letterSpacing: '0.06em',
+                      }}>
+                        YOUR REVIEW
                       </label>
                       <textarea
-                        className="input"
-                        style={{ minHeight: '90px', resize: 'vertical', fontSize: '0.875rem' }}
+                        style={{
+                          width: '100%', minHeight: 88, resize: 'vertical',
+                          background: DS.elevated,
+                          border: `1px solid ${DS.border}`,
+                          borderRadius: DS.radiusMd,
+                          color: DS.textPrimary,
+                          padding: '0.75rem 1rem', fontSize: '0.875rem',
+                          fontFamily: 'var(--font-body)',
+                          outline: 'none',
+                          lineHeight: 1.6,
+                        }}
                         placeholder="Share your experience with this fragrance..."
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         required
+                        onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = DS.border; }}
                       />
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        type="submit"
+                    <div style={{ display: 'flex', gap: '0.6rem' }}>
+                      <WhiteBtn
                         disabled={submittingReview}
-                        style={{
-                          flex: 1, height: 42, borderRadius: 10, border: 'none',
-                          background: 'var(--color-gold)', color: '#0a0a0a',
-                          fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer',
-                        }}
+                        style={{ flex: 1 }}
+                        onClick={() => {}} // form submit handled by form
                       >
                         {submittingReview ? 'Submitting...' : 'Submit Review'}
-                      </button>
+                      </WhiteBtn>
                       <button
                         type="button"
                         onClick={() => setShowReviewForm(false)}
                         style={{
-                          height: 42, padding: '0 1.2rem', borderRadius: 10,
-                          border: '1px solid var(--color-border)',
-                          background: 'transparent', color: 'var(--color-text-secondary)',
-                          fontSize: '0.875rem', cursor: 'pointer',
+                          padding: '0 1.2rem', borderRadius: DS.radiusMd,
+                          border: `1px solid ${DS.border}`,
+                          background: 'transparent', color: DS.textSecondary,
+                          fontSize: '0.85rem', cursor: 'pointer',
+                          fontFamily: 'var(--font-body)',
                         }}
                       >
                         Cancel
@@ -647,35 +764,44 @@ export default function ProductDetailPage() {
 
               {/* Reviews List */}
               {reviews.length === 0 ? (
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '2rem' }}>
+                <div style={{
+                  textAlign: 'center', padding: '3rem 2rem',
+                  background: DS.card, borderRadius: DS.radius,
+                  border: `1px solid ${DS.border}`,
+                  color: DS.textMuted, fontSize: '0.875rem',
+                }}>
                   No reviews yet. Be the first to review!
-                </p>
+                </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                   {reviews.map((r) => (
                     <div key={r._id} style={{
-                      background: 'var(--color-bg-card)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: 14, padding: '1.25rem',
-                      boxShadow: 'var(--shadow-sm)',
+                      background: DS.card,
+                      border: `1px solid ${DS.border}`,
+                      borderRadius: DS.radiusMd,
+                      padding: '1.2rem 1.4rem',
                     }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        alignItems: 'flex-start', marginBottom: '0.7rem',
+                        flexWrap: 'wrap', gap: '0.5rem',
+                      }}>
                         <div>
-                          <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-text-primary)', marginBottom: '0.1rem' }}>
+                          <p style={{ fontWeight: 700, fontSize: '0.875rem', color: DS.textPrimary, marginBottom: '0.1rem' }}>
                             {r.user?.name || 'Anonymous'}
                           </p>
-                          <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                          <p style={{ fontSize: '0.7rem', color: DS.textMuted }}>
                             {new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </p>
                         </div>
                         <StarRating rating={r.rating} size={13} />
                       </div>
                       {r.title && (
-                        <p style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--color-text-primary)', marginBottom: '0.3rem' }}>
+                        <p style={{ fontWeight: 600, fontSize: '0.85rem', color: DS.textPrimary, marginBottom: '0.35rem' }}>
                           {r.title}
                         </p>
                       )}
-                      <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.845rem', lineHeight: 1.65 }}>
+                      <p style={{ color: DS.textSecondary, fontSize: '0.845rem', lineHeight: 1.7 }}>
                         {r.comment}
                       </p>
                     </div>
@@ -686,18 +812,23 @@ export default function ProductDetailPage() {
           </div>
         </section>
 
-        {/* ═══════════════════════════════════════════════════
-            YOU MIGHT ALSO LIKE — Related Products
-        ═══════════════════════════════════════════════════ */}
+        {/* ═════════════════════════════════════════════════════════
+            YOU MIGHT ALSO LIKE
+        ═════════════════════════════════════════════════════════ */}
         {recommendations.length > 0 && (
           <section style={{ marginBottom: '3rem' }}>
-            <h2 style={{
-              fontFamily: 'var(--font-heading)', fontSize: '1.6rem', fontWeight: 700,
-              textAlign: 'center', color: 'var(--color-text-primary)',
-              marginBottom: '2rem',
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2.5rem',
             }}>
-              You might also like
-            </h2>
+              <div style={{ height: 1, flex: 1, background: DS.border }} />
+              <h2 style={{
+                fontFamily: 'var(--font-heading)', fontSize: '1.6rem', fontWeight: 700,
+                color: DS.textPrimary, margin: 0, whiteSpace: 'nowrap',
+              }}>
+                You might also like
+              </h2>
+              <div style={{ height: 1, flex: 1, background: DS.border }} />
+            </div>
             <div className="products-grid">
               {recommendations.slice(0, 8).map((p) => (
                 <ProductCard key={p._id} product={p} />
@@ -707,18 +838,95 @@ export default function ProductDetailPage() {
         )}
       </div>
 
-      {/* ── Responsive overrides ── */}
+      {/* ── Page-scoped styles ── */}
       <style>{`
-        @keyframes spin {
+        @keyframes pdp-spin {
           to { transform: rotate(360deg); }
         }
-        @media (max-width: 768px) {
-          .product-top-grid {
+        @media (max-width: 860px) {
+          .pdp-top {
             grid-template-columns: 1fr !important;
             gap: 2rem !important;
           }
         }
+        @media (max-width: 640px) {
+          .pdp-reviews-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
     </div>
+  );
+}
+
+/* ── Sub-components (co-located for simplicity) ─────────────────── */
+
+function NoteTag({ children }: { children: React.ReactNode }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <span
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: '4px 14px', borderRadius: 20,
+        border: `1px solid ${hovered ? 'rgba(255,255,255,0.35)' : DS.border}`,
+        background: hovered ? 'rgba(255,255,255,0.05)' : DS.elevated,
+        color: hovered ? DS.textPrimary : DS.textSecondary,
+        fontSize: '0.76rem', fontWeight: 500,
+        cursor: 'default', transition: 'all 0.2s ease',
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function QuantityBtn({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      onClick={disabled ? undefined : onClick}
+      style={{
+        width: 38, height: 40,
+        background: DS.elevated,
+        border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+        color: disabled ? DS.textMuted : DS.textPrimary,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        opacity: disabled ? 0.4 : 1,
+        transition: 'background 0.15s',
+        fontFamily: 'var(--font-body)',
+      }}
+      onMouseEnter={(e) => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = DS.elevated; }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Thumbnail({
+  src, alt, active, onClick, fallback,
+}: { src: string; alt: string; active: boolean; onClick: () => void; fallback: string }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: 88, height: 88, borderRadius: 14, overflow: 'hidden',
+        border: `2px solid ${active ? DS.accent : DS.border}`,
+        cursor: 'pointer', background: 'none', padding: 0,
+        boxShadow: active ? '0 0 16px rgba(255,255,255,0.15)' : 'none',
+        transition: 'all 0.2s ease',
+        transform: active ? 'scale(1.06)' : 'scale(1)',
+        flexShrink: 0,
+      }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        onError={(e) => {
+          e.currentTarget.src = `https://placehold.co/88x88/1a1a1a/c8a96e?text=${encodeURIComponent(fallback)}`;
+        }}
+      />
+    </button>
   );
 }
