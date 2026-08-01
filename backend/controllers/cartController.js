@@ -23,10 +23,28 @@ const getCart = asyncHandler(async (req, res, next) => {
 // @route   POST /api/cart
 // @access  Private
 const addToCart = asyncHandler(async (req, res, next) => {
+  console.log("🛒 Cart API Received Payload:", req.body);
+
+  if (!req.user || !req.user._id) {
+    console.error("❌ Cart API Error (401): Missing authenticated user token");
+    const err = new Error("Not authorized, authentication token required");
+    err.statusCode = 401;
+    return next(err);
+  }
+
   const { productId, quantity = 1 } = req.body;
 
   if (!productId) {
-    const err = new Error("Product ID is required");
+    console.error("❌ Cart API Error (400): Missing productId in body:", req.body);
+    const err = new Error("Product ID (productId) is required");
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  const numQuantity = Number(quantity);
+  if (isNaN(numQuantity) || numQuantity < 1) {
+    console.error("❌ Cart API Error (400): Invalid quantity parameter:", quantity);
+    const err = new Error("Quantity must be at least 1");
     err.statusCode = 400;
     return next(err);
   }
@@ -38,7 +56,7 @@ const addToCart = asyncHandler(async (req, res, next) => {
     return next(err);
   }
 
-  if (product.stock < quantity) {
+  if (product.stock < numQuantity) {
     const err = new Error("Insufficient stock");
     err.statusCode = 400;
     return next(err);

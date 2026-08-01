@@ -153,8 +153,14 @@ export const categoriesAPI = {
 // ─── Cart API ─────────────────────────────────────────────────────────────────
 export const cartAPI = {
   get: () => api.get('/cart'),
-  add: (productId: string, quantity: number = 1) =>
-    api.post('/cart', { productId, quantity }),
+  add: (productId: string, quantity: number = 1) => {
+    console.log('🛒 Sending cartAPI.add request:', { productId, quantity });
+    if (!productId) {
+      console.error('❌ cartAPI.add error: productId is missing');
+      return Promise.reject(new Error('Product ID is required'));
+    }
+    return api.post('/cart', { productId, quantity: Number(quantity) || 1 });
+  },
   update: (productId: string, quantity: number) =>
     api.put(`/cart/${productId}`, { quantity }),
   remove: (productId: string) => api.delete(`/cart/${productId}`),

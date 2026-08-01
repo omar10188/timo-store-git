@@ -21,7 +21,10 @@ export default function Navbar() {
   const cartCount = useCartCount();
   const { theme, toggleTheme } = useTheme();
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -138,7 +141,7 @@ export default function Navbar() {
             }}
             onClick={toggleTheme}
             aria-label="Toggle Theme"
-            aria-pressed={theme === 'dark'}
+            aria-pressed={mounted ? theme === 'dark' : false}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gold)';
               (e.currentTarget as HTMLElement).style.color = 'var(--color-gold)';
@@ -148,18 +151,22 @@ export default function Navbar() {
               (e.currentTarget as HTMLElement).style.color = 'var(--color-text-secondary)';
             }}
           >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={theme}
-                initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-                animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-                transition={{ duration: 0.25, ease: 'easeInOut' }}
-                style={{ display: 'flex' }}
-              >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              </motion.span>
-            </AnimatePresence>
+            {mounted ? (
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={theme}
+                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  style={{ display: 'flex' }}
+                >
+                  {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                </motion.span>
+              </AnimatePresence>
+            ) : (
+              <span style={{ width: 18, height: 18, display: 'inline-block' }} />
+            )}
           </button>
 
           {/* Wishlist */}
@@ -290,19 +297,25 @@ export default function Navbar() {
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium tracking-wide transition-colors text-left"
             style={{ color: 'var(--color-text-secondary)' }}
           >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={theme}
-                initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-                animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-                transition={{ duration: 0.25 }}
-                style={{ display: 'flex' }}
-              >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              </motion.span>
-            </AnimatePresence>
-            {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            {mounted ? (
+              <>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={theme}
+                    initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                    transition={{ duration: 0.25 }}
+                    style={{ display: 'flex' }}
+                  >
+                    {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                  </motion.span>
+                </AnimatePresence>
+                {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              </>
+            ) : (
+              <span>Toggle Theme</span>
+            )}
           </button>
 
           {!isAuthenticated ? (

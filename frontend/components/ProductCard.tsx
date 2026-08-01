@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ShoppingCart, Heart, Star, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -100,8 +101,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   };
 
+  const router = useRouter();
+
   return (
-    <Link href={`/products/${product._id}`} className="block h-full outline-none">
+    <div
+      onClick={() => router.push(`/products/${product._id}`)}
+      className="block h-full outline-none cursor-pointer"
+    >
       <motion.article 
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -169,7 +175,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Action overlay (Wishlist, Quick View) */}
-          <div className="absolute right-2 top-2 sm:right-3 sm:top-3 flex flex-col gap-1.5 sm:gap-2 opacity-100 md:opacity-0 transition-all duration-300 md:group-hover:opacity-100 translate-x-0 md:translate-x-2 md:group-hover:translate-x-0">
+          <div className="absolute right-2 top-2 sm:right-3 sm:top-3 flex flex-col gap-1.5 sm:gap-2 opacity-100 md:opacity-0 transition-all duration-300 md:group-hover:opacity-100 translate-x-0 md:translate-x-2 md:group-hover:translate-x-0 z-20">
             <button
               onClick={handleWishlist}
               className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl backdrop-blur-md transition-all duration-300 hover:scale-110"
@@ -182,15 +188,18 @@ export default function ProductCard({ product }: ProductCardProps) {
             >
               <Heart size={14} className="sm:w-4 sm:h-4" fill={isWishlisted ? 'var(--color-gold)' : 'none'} />
             </button>
-            <Link
-              href={`/products/${product._id}`}
-              onClick={(e) => e.stopPropagation()}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/products/${product._id}`);
+              }}
               className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl backdrop-blur-md transition-all duration-300 hover:scale-110"
               style={{
                 border: '1px solid var(--color-border)',
                 background: 'var(--color-bg-card)',
                 color: 'var(--color-text-muted)',
               }}
+              aria-label="Quick view"
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gold)';
                 (e.currentTarget as HTMLElement).style.color = 'var(--color-gold)';
@@ -201,7 +210,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               }}
             >
               <Eye size={14} className="sm:w-4 sm:h-4" />
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -279,7 +288,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </motion.button>
         </div>
       </motion.article>
-    </Link>
+    </div>
   );
 }
 
