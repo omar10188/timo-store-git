@@ -7,7 +7,9 @@ const asyncHandler = require("../utils/asyncHandler");
 // @route   POST /api/reviews
 // @access  Private
 const createReview = asyncHandler(async (req, res, next) => {
-  const { product: productId, rating, title, comment } = req.body;
+  // Accept either `product` or `productId` — frontend sends `productId`, schema uses `product`
+  const productId = req.body.productId || req.body.product;
+  const { rating, title, comment } = req.body;
 
   if (!productId || !rating || !comment) {
     const err = new Error("Product ID, rating, and comment are required");

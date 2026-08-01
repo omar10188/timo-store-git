@@ -45,6 +45,7 @@ const userSchema = new mongoose.Schema(
     emailVerificationToken: String,
     emailVerificationExpire: Date,
     resetPasswordToken: String,
+    resetPasswordExpire: Date,
     sessions: [
       {
         tokenHash: { type: String, required: true },

@@ -5,8 +5,13 @@ const { successResponse } = require("../utils/apiResponse");
 
 // @desc    Get the current user's cart
 // @route   GET /api/cart
-// @access  Private
+// @access  Optional-Auth (guests receive an empty cart)
 const getCart = asyncHandler(async (req, res, next) => {
+  // Guest user — return empty cart (they use localStorage on the frontend)
+  if (!req.user) {
+    return successResponse(res, { items: [], totalPrice: 0 }, "Cart fetched successfully");
+  }
+
   let cart = await Cart.findOne({ user: req.user._id }).populate(
     "items.product",
     "name price image stock"

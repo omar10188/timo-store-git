@@ -53,10 +53,14 @@ const createOrder = asyncHandler(async (req, res, next) => {
     });
 
     if (!user) {
+      // Generate a cryptographically random password — guest accounts cannot be logged into
+      const { randomBytes } = require("crypto");
+      const randomPassword = randomBytes(24).toString("base64"); // e.g. "X9k2m..." — not guessable
+
       user = await User.create({
         name,
         email: `guest_${cleanPhone || Date.now()}@timo.com`,
-        password: "GuestPassword123!",
+        password: randomPassword,
         phone: cleanPhone,
         role: "user",
         emailVerified: true,
@@ -75,35 +79,74 @@ const createOrder = asyncHandler(async (req, res, next) => {
     user.address = { ...user.address, street: addressString, city: shippingAddress?.city || "Local", country: shippingAddress?.country || "Egypt" };
   }
 
-  // 2. Resolve Items (from request body or database Cart)
+  // 2. Resolve Items — ALWAYS fetch price from DB, never trust client
   let orderItems = [];
   let subtotal = 0;
 
   if (Array.isArray(rawItems) && rawItems.length > 0) {
-    orderItems = rawItems.map((item) => ({
-      product: item.product || item._id,
-      name: item.name,
-      price: Number(item.price || 0),
-      image: item.image || "",
-      quantity: Number(item.quantity || 1),
-    }));
+    // Fetch all products from DB in one query
+    const productIds = rawItems.map((item) => item.product || item._id).filter(Boolean);
+    const dbProducts = await Product.find({ _id: { $in: productIds } }).lean();
+    const dbProductMap = Object.fromEntries(dbProducts.map((p) => [p._id.toString(), p]));
+
+    // Validate stock and build order items with server-side prices
+    for (const item of rawItems) {
+      const productId = (item.product || item._id)?.toString();
+      const dbProduct = dbProductMap[productId];
+
+      if (!dbProduct) {
+        const err = new Error(`Product not found: ${productId}`);
+        err.statusCode = 404;
+        return next(err);
+      }
+
+      const qty = Number(item.quantity) || 1;
+      if (dbProduct.stock < qty) {
+        const err = new Error(`Insufficient stock for "${dbProduct.name}" (requested: ${qty}, available: ${dbProduct.stock})`);
+        err.statusCode = 400;
+        return next(err);
+      }
+
+      // Use DB price — NEVER item.price from client
+      const serverPrice = dbProduct.salePrice || dbProduct.price;
+
+      orderItems.push({
+        product: dbProduct._id,
+        name: dbProduct.name,
+        price: serverPrice,
+        image: dbProduct.image || item.image || "",
+        quantity: qty,
+      });
+    }
     subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   } else {
-    const cart = await Cart.findOne({ user: user._id }).populate("items.product", "stock");
+    const cart = await Cart.findOne({ user: user._id }).populate("items.product", "name price salePrice stock image");
     if (!cart || cart.items.length === 0) {
       const err = new Error("Your cart is empty");
       err.statusCode = 400;
       return next(err);
     }
 
-    orderItems = cart.items.map((item) => ({
-      product: item.product._id,
-      name: item.name,
-      price: item.price,
-      image: item.image,
-      quantity: item.quantity,
-    }));
-    subtotal = cart.totalPrice;
+    // Validate stock for each cart item using live DB data
+    for (const item of cart.items) {
+      const dbProduct = item.product;
+      if (!dbProduct) continue;
+
+      if (dbProduct.stock < item.quantity) {
+        const err = new Error(`Insufficient stock for "${dbProduct.name}" (available: ${dbProduct.stock})`);
+        err.statusCode = 400;
+        return next(err);
+      }
+
+      orderItems.push({
+        product: dbProduct._id,
+        name: item.name,
+        price: dbProduct.salePrice || dbProduct.price, // Always from DB
+        image: item.image,
+        quantity: item.quantity,
+      });
+    }
+    subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     // Clear DB cart
     cart.items = [];
@@ -117,21 +160,48 @@ const createOrder = asyncHandler(async (req, res, next) => {
     return next(err);
   }
 
-  // 3. Handle Coupon & Discount
+  // 3. Handle Coupon & Discount (with reuse prevention)
   let discount = 0;
   let appliedCoupon = null;
 
   if (couponCode) {
     const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
-    if (coupon && coupon.isValid && subtotal >= coupon.minOrderValue) {
-      discount = coupon.type === "percent" ? (subtotal * coupon.discountValue) / 100 : coupon.discountValue;
-      if (discount > subtotal) discount = subtotal;
-      appliedCoupon = coupon.code;
 
-      coupon.usedCount += 1;
-      if (!coupon.usedBy.includes(user._id)) coupon.usedBy.push(user._id);
-      await coupon.save();
+    if (!coupon) {
+      const err = new Error("Coupon code not found");
+      err.statusCode = 400;
+      return next(err);
     }
+
+    if (!coupon.isValid) {
+      const err = new Error("This coupon is no longer active or has expired");
+      err.statusCode = 400;
+      return next(err);
+    }
+
+    if (subtotal < coupon.minOrderValue) {
+      const err = new Error(`Minimum order value of EGP ${coupon.minOrderValue} required for this coupon`);
+      err.statusCode = 400;
+      return next(err);
+    }
+
+    // Prevent coupon reuse by the same user
+    const alreadyUsed = coupon.usedBy?.some((id) => id.toString() === user._id.toString());
+    if (alreadyUsed) {
+      const err = new Error("You have already used this coupon");
+      err.statusCode = 400;
+      return next(err);
+    }
+
+    discount = coupon.type === "percent"
+      ? (subtotal * coupon.discountValue) / 100
+      : coupon.discountValue;
+    if (discount > subtotal) discount = subtotal;
+    appliedCoupon = coupon.code;
+
+    coupon.usedCount += 1;
+    coupon.usedBy.push(user._id);
+    await coupon.save();
   }
 
   const totalPrice = subtotal - discount;

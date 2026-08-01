@@ -111,6 +111,22 @@ export const useCartStore = create<CartState>()(
           return;
         }
 
+        const isAuthenticated = useAuthStore.getState().isAuthenticated;
+
+        // Guest users: use localStorage cart only (no backend call needed)
+        if (!isAuthenticated) {
+          get().addItem({
+            product: productId,
+            name: itemData?.name || 'Product',
+            price: itemData?.price || 0,
+            image: itemData?.image || '',
+            quantity,
+          });
+          set({ isOpen: true });
+          console.log('ℹ️ Guest mode: item added to local cart only');
+          return;
+        }
+
         try {
           const res = await cartAPI.add(productId, quantity);
           const rawCart = res.data?.data || res.data;

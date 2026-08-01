@@ -12,7 +12,7 @@ const {
   resetPassword,
   testEmailEndpoint,
 } = require("../controllers/authController");
-const { protect } = require("../middleware/authMiddleware");
+const { protect, authorize } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validateMiddleware");
 const {
   registerSchema,
@@ -24,7 +24,8 @@ const { authLimiter } = require("../middleware/rateLimiter");
 const { getCsrfToken } = require("../middleware/csrfMiddleware");
 
 router.get("/csrf-token", getCsrfToken);
-router.get("/test-email", testEmailEndpoint);
+// test-email is admin-only to prevent public email spam abuse
+router.get("/test-email", protect, authorize("admin"), testEmailEndpoint);
 router.post("/register", authLimiter, validate(registerSchema), registerUser);
 router.post("/login", authLimiter, validate(loginSchema), loginUser);
 router.post("/refresh", refreshAccessToken);
