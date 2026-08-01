@@ -1,5 +1,5 @@
 const Coupon = require("../models/Coupon");
-const asyncHandler = require("../middleware/asyncHandler");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc    Create a coupon
 // @route   POST /api/coupons

@@ -3,19 +3,29 @@ const router = express.Router();
 const { protect, authorize } = require("../middleware/authMiddleware");
 const {
   getDashboardStats,
+  getAdminOrders,
+  getAdminOrderById,
   getAllUsers,
   updateUserRole,
   deleteUser,
 } = require("../controllers/adminController");
-const {
-  getOrders,
-  updateOrderStatus,
-} = require("../controllers/orderController");
+const { updateOrderStatus } = require("../controllers/orderController");
 
-// Dashboard - Applied to ONE route only as requested
-router.get("/stats", protect, authorize("admin"), getDashboardStats);
+// All admin routes require authentication + admin role
+router.use(protect, authorize("admin"));
 
-// Users
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+router.get("/stats", getDashboardStats);
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+// GET /api/admin/orders?status=pending&search=omar&page=1&limit=20
+router.get("/orders", getAdminOrders);
+// GET /api/admin/orders/:id
+router.get("/orders/:id", getAdminOrderById);
+// PATCH /api/admin/orders/:id  (update status + note)
+router.patch("/orders/:id", updateOrderStatus);
+
+// ─── Users ────────────────────────────────────────────────────────────────────
 const { z } = require("zod");
 const validate = require("../middleware/validateMiddleware");
 
@@ -31,9 +41,5 @@ const updateRoleSchema = z.object({
 router.get("/users", getAllUsers);
 router.put("/users/:id/role", validate(updateRoleSchema), updateUserRole);
 router.delete("/users/:id", deleteUser);
-
-// Orders (admin view)
-router.get("/orders", getOrders);
-router.put("/orders/:id/status", updateOrderStatus);
 
 module.exports = router;

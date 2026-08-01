@@ -1,5 +1,5 @@
 const Product = require("../models/Product");
-const asyncHandler = require("../middleware/asyncHandler");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc    Create a new product
 // @route   POST /api/products
@@ -44,7 +44,9 @@ const createProduct = asyncHandler(async (req, res, next) => {
   res.status(201).json(product);
 });
 
-// @desc    Get all products (with search, filter, pagination)
+const mongoose = require("mongoose");
+
+// @desc    Get all products (with search, filter, pagination, sorting, isFeatured)
 // @route   GET /api/products
 // @access  Public
 const getProducts = asyncHandler(async (req, res, next) => {
@@ -54,16 +56,21 @@ const getProducts = asyncHandler(async (req, res, next) => {
   const minPrice = req.query.minPrice ? Number(req.query.minPrice) : null;
   const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : null;
   const category = req.query.category || "";
+  const isFeatured = req.query.isFeatured;
+  const sort = req.query.sort;
 
   const query = {};
 
   if (search) {
-    // Uses text index for better performance
     query.$text = { $search: search };
   }
 
   if (category) {
     query.category = category;
+  }
+
+  if (isFeatured !== undefined) {
+    query.isFeatured = isFeatured === "true" || isFeatured === true;
   }
 
   if (minPrice !== null || maxPrice !== null) {
@@ -72,10 +79,24 @@ const getProducts = asyncHandler(async (req, res, next) => {
     if (maxPrice !== null) query.price.$lte = maxPrice;
   }
 
+  // Sorting logic
+  let sortOptions = { createdAt: -1 };
+  if (sort === "newest") {
+    sortOptions = { createdAt: -1 };
+  } else if (sort === "price-asc") {
+    sortOptions = { price: 1 };
+  } else if (sort === "price-desc") {
+    sortOptions = { price: -1 };
+  } else if (sort === "rating") {
+    sortOptions = { rating: -1 };
+  } else if (sort === "trending") {
+    sortOptions = { rating: -1, numReviews: -1 };
+  }
+
   const total = await Product.countDocuments(query);
   const products = await Product.find(query)
     .populate("category", "name slug")
-    .sort({ createdAt: -1 })
+    .sort(sortOptions)
     .skip((page - 1) * limit)
     .limit(limit);
 
@@ -91,6 +112,12 @@ const getProducts = asyncHandler(async (req, res, next) => {
 // @route   GET /api/products/:id
 // @access  Public
 const getProductById = asyncHandler(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const error = new Error(`Product not found with id ${req.params.id}`);
+    error.statusCode = 404;
+    return next(error);
+  }
+
   const product = await Product.findById(req.params.id).populate("category", "name slug");
 
   if (!product) {
@@ -187,6 +214,12 @@ const getTrendingProducts = asyncHandler(async (req, res, next) => {
 // @route   GET /api/products/:id/recommendations
 // @access  Public
 const getRelatedProducts = asyncHandler(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const error = new Error(`Product not found with id ${req.params.id}`);
+    error.statusCode = 404;
+    return next(error);
+  }
+
   const product = await Product.findById(req.params.id);
 
   if (!product) {
@@ -195,19 +228,26 @@ const getRelatedProducts = asyncHandler(async (req, res, next) => {
     return next(error);
   }
 
+  const categoryId = product.category?._id || product.category;
+  const isCategoryValid = mongoose.Types.ObjectId.isValid(categoryId);
+
   // Find products in the same category, excluding the current one
-  let relatedProducts = await Product.find({
-    category: product.category,
-    _id: { $ne: product._id },
-  })
-    .limit(4)
-    .populate("category", "name slug")
-    .lean();
+  let relatedProducts = [];
+  if (isCategoryValid) {
+    relatedProducts = await Product.find({
+      category: categoryId,
+      _id: { $ne: product._id },
+    })
+      .limit(4)
+      .populate("category", "name slug")
+      .lean();
+  }
 
   // If not enough related products, fetch some top rated to fill the gap
   if (relatedProducts.length < 4) {
+    const excludeIds = [product._id, ...relatedProducts.map((p) => p._id)];
     const topRated = await Product.find({
-      _id: { $ne: product._id, $nin: relatedProducts.map((p) => p._id) },
+      _id: { $nin: excludeIds },
     })
       .sort({ rating: -1 })
       .limit(4 - relatedProducts.length)

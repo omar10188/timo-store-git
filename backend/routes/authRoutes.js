@@ -6,38 +6,33 @@ const {
   refreshAccessToken,
   getProfile,
   logoutUser,
+  logoutAllDevices,
   verifyEmail,
   forgotPassword,
   resetPassword,
+  testEmailEndpoint,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
-const rateLimit = require("express-rate-limit");
+const validate = require("../middleware/validateMiddleware");
+const {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} = require("../validators/authValidator");
+const { authLimiter } = require("../middleware/rateLimiter");
+const { getCsrfToken } = require("../middleware/csrfMiddleware");
 
-// Strict rate limiter for login to prevent brute-force attacks
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: "Too many login attempts, please try again after 15 minutes" },
-});
-
-// Slightly looser rate limiter for registration
-const registerLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: "Too many registration attempts, please try again later" },
-});
-
-router.post("/register", registerLimiter, registerUser);
-router.post("/login", loginLimiter, loginUser);
+router.get("/csrf-token", getCsrfToken);
+router.get("/test-email", testEmailEndpoint);
+router.post("/register", authLimiter, validate(registerSchema), registerUser);
+router.post("/login", authLimiter, validate(loginSchema), loginUser);
 router.post("/refresh", refreshAccessToken);
 router.get("/verify-email/:token", verifyEmail);
-router.post("/forgot-password", forgotPassword);
-router.put("/reset-password/:token", resetPassword);
+router.post("/forgot-password", authLimiter, validate(forgotPasswordSchema), forgotPassword);
+router.put("/reset-password/:token", validate(resetPasswordSchema), resetPassword);
 router.get("/me", protect, getProfile);
 router.post("/logout", protect, logoutUser);
+router.post("/logout-all", protect, logoutAllDevices);
 
 module.exports = router;

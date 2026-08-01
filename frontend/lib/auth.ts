@@ -8,13 +8,16 @@ export interface User {
   name: string;
   email: string;
   role: 'user' | 'admin';
+  phone?: string;
   avatar?: string;
 }
 
 // ─── Token Storage ────────────────────────────────────────────────────────────
-export const setTokens = (accessToken: string, refreshToken: string) => {
+export const setTokens = (accessToken: string, refreshToken?: string) => {
   localStorage.setItem('accessToken', accessToken);
-  localStorage.setItem('refreshToken', refreshToken);
+  if (refreshToken) {
+    localStorage.setItem('refreshToken', refreshToken);
+  }
 };
 
 export const clearTokens = () => {

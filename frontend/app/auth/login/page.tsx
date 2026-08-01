@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
@@ -17,22 +17,42 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Clear any stale/corrupted tokens when arriving at login page
+  useEffect(() => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) { toast.error('Please fill all fields'); return; }
 
     setLoading(true);
     try {
-      const { data } = await authAPI.login({ email, password });
-      login(
-        { _id: data._id, name: data.name, email: data.email, role: data.role },
-        data.accessToken,
-        data.refreshToken
-      );
-      toast.success(`Welcome back, ${data.name}!`);
-      router.push('/');
+      const res = await authAPI.login({ email, password });
+      const { accessToken, user } = res.data.data;
+
+      if (!accessToken || !user) {
+        throw new Error('Invalid authentication response from server');
+      }
+
+      // Update Zustand Auth Store & Persist State
+      login(user, accessToken);
+
+      toast.success(`Welcome back, ${user.name}!`);
+
+      // Redirect admin to /admin or regular user to /dashboard
+      if (user.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Invalid email or password');
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Invalid email or password';
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }

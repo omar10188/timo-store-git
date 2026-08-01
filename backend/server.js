@@ -1,6 +1,7 @@
 const config = require("./config");
 
 const express = require("express");
+const http = require("http");
 const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
@@ -17,28 +18,27 @@ const connectDB = require("./config/db");
 // Utils
 const logger = require("./utils/logger");
 
+// Socket.io
+const { initSocket } = require("./socket");
+
 // Routes
-const authRoutes = require("./routes/authRoutes");
-const productRoutes = require("./routes/productRoutes");
-const orderRoutes = require("./routes/orderRoutes");
-const reviewRoutes = require("./routes/reviewRoutes");
-const cartRoutes = require("./routes/cartRoutes");
-const categoryRoutes = require("./routes/categoryRoutes");
-const couponRoutes = require("./routes/couponRoutes");
-const wishlistRoutes = require("./routes/wishlistRoutes");
-const adminRoutes = require("./routes/adminRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
-const uploadRoutes = require("./routes/uploadRoutes");
-const imageRoutes = require("./routes/imageRoutes");
+const apiRoutes = require("./routes");
 
 // Middleware
-const errorHandler = require("./middleware/errorMiddleware");
+const errorHandler = require("./middleware/errorHandler");
 const notFound = require("./middleware/notFound");
 
+const compression = require("compression");
 const app = express();
+const server = http.createServer(app);
 
 // ─── Security Middleware ───────────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: true,
+  hidePoweredBy: true,
+  frameguard: { action: "deny" }
+}));
 
 app.use(
   cors({
@@ -47,12 +47,8 @@ app.use(
   })
 );
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
-  message: { error: "Too many requests, please try again later." },
-});
-app.use(limiter);
+const { globalLimiter } = require("./middleware/rateLimiter");
+app.use(globalLimiter);
 
 // ─── Payment Webhook (Must be before express.json) ───────────────────────────
 // Stripe requires the raw body to verify the signature
@@ -67,11 +63,26 @@ app.use(
     },
   })
 );
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(cookieParser());
+app.use(compression());
 
-// Prevent NoSQL injections (Moved to security block above)
+// Sanitization must be after body parsers
+// Express 5 workaround for old middlewares that try to mutate req.query
+app.use((req, res, next) => {
+  Object.defineProperty(req, "query", {
+    value: req.query,
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+  next();
+});
+app.use(mongoSanitize());
+app.use(xss());
+app.use(hpp());
+
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -96,18 +107,7 @@ app.get("/", (req, res) => {
 });
 
 // ─── API Routes ────────────────────────────────────────────────────────────────
-app.use("/api/auth", authRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/cart", cartRoutes);
-app.use("/api/wishlist", wishlistRoutes);
-app.use("/api/coupons", couponRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/upload", uploadRoutes);
-app.use("/api/images", imageRoutes);
+app.use("/api", apiRoutes);
 
 // ─── Error Handling ────────────────────────────────────────────────────────────
 app.use(notFound);
@@ -117,9 +117,12 @@ app.use(errorHandler);
 connectDB()
   .then(() => {
     const PORT = config.port;
-    app.listen(PORT, () => {
+    // Initialize Socket.io on the HTTP server
+    initSocket(server);
+    server.listen(PORT, () => {
       console.log(`✅ MongoDB connected`);
       console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`⚡ Socket.io ready`);
     });
   })
   .catch((err) => {

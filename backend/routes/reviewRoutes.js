@@ -8,8 +8,9 @@ const {
   getProductReviews,
 } = require("../controllers/reviewController");
 
-// Public route
+// Public routes
 router.get("/product/:productId", getProductReviews);
+router.get("/:productId", getProductReviews);
 
 // Protected routes
 router.use(protect);

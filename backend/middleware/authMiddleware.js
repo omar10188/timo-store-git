@@ -43,4 +43,27 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { protect, authorize };
+const optionalAuth = async (req, res, next) => {
+  try {
+    let token;
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer")) {
+      token = authHeader.split(" ")[1];
+    }
+
+    if (token) {
+      const config = require("../config");
+      const decoded = jwt.verify(token, config.jwt.accessSecret);
+      const user = await User.findById(decoded.id).select("-password");
+      if (user) {
+        req.user = user;
+      }
+    }
+  } catch {
+    // Ignore invalid token for guest fallback
+  }
+  next();
+};
+
+module.exports = { protect, optionalAuth, authorize };

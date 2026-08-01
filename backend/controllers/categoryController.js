@@ -1,5 +1,5 @@
 const Category = require("../models/Category");
-const asyncHandler = require("../middleware/asyncHandler");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc    Get all categories
 // @route   GET /api/categories

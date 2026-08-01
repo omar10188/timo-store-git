@@ -30,10 +30,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+router.get("/trending", getTrendingProducts);
 router.get("/", getProducts);
-router.get("/trending", getTrendingProducts); // Must be before /:id
-router.get("/:id", getProductById);
 router.get("/:id/recommendations", getRelatedProducts);
+router.get("/:id", getProductById);
 router.post("/", protect, authorize("admin"), upload.array("images", 5), createProduct);
 router.put("/:id", protect, authorize("admin"), upload.array("images", 5), updateProduct);
 router.delete("/:id", protect, authorize("admin"), deleteProduct);

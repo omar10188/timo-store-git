@@ -7,10 +7,7 @@ const validate = (schema) => (req, res, next) => {
     });
     next();
   } catch (error) {
-    return next({
-      statusCode: 400,
-      message: error.errors.map((err) => err.message).join(", "),
-    });
+    return next(error);
   }
 };
 

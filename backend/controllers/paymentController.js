@@ -1,6 +1,6 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY || "sk_test_dummy");
 const Order = require("../models/Order");
-const asyncHandler = require("../middleware/asyncHandler");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc    Create Stripe Checkout Session
 // @route   POST /api/payments/checkout-session

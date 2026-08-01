@@ -1,32 +1,85 @@
 import { create } from 'zustand';
 import { adminAPI, productsAPI, couponsAPI } from '../api';
 
+interface StatusHistoryEntry {
+  status: string;
+  changedAt: string;
+  note: string;
+}
+
+interface Order {
+  _id: string;
+  user?: { name: string; email: string; phone?: string };
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  items: { name: string; price: number; quantity: number; image?: string }[];
+  totalPrice: number;
+  subtotal: number;
+  discount: number;
+  coupon?: string;
+  status: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  isPaid: boolean;
+  paidAt?: string;
+  cancelledAt?: string;
+  shippingAddress?: { street: string; city: string; country: string; postalCode?: string };
+  notes?: string;
+  statusHistory: StatusHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface AdminState {
   stats: any;
-  orders: any[];
+  orders: Order[];
+  selectedOrder: Order | null;
   products: any[];
   coupons: any[];
   users: any[];
   isLoading: boolean;
+  isOrderLoading: boolean;
   error: string | null;
+  // Filters
+  searchQuery: string;
+  statusFilter: string;
+  currentPage: number;
+  totalPages: number;
+  totalOrders: number;
+  // Actions
   fetchStats: () => Promise<void>;
-  fetchOrders: () => Promise<void>;
+  fetchOrders: (params?: { search?: string; status?: string; page?: number }) => Promise<void>;
+  fetchOrderById: (id: string) => Promise<void>;
   fetchProducts: () => Promise<void>;
   fetchCoupons: () => Promise<void>;
   fetchUsers: () => Promise<void>;
-  updateOrderStatus: (id: string, status: string) => Promise<void>;
+  updateOrderStatus: (id: string, status: string, note?: string) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   deleteCoupon: (id: string) => Promise<void>;
+  // Socket actions
+  addOrder: (order: any) => void;
+  syncOrderStatus: (id: string, status: string) => void;
+  // Filter setters
+  setSearch: (q: string) => void;
+  setStatusFilter: (s: string) => void;
 }
 
-export const useAdminStore = create<AdminState>((set) => ({
+export const useAdminStore = create<AdminState>((set, get) => ({
   stats: null,
   orders: [],
+  selectedOrder: null,
   products: [],
   coupons: [],
   users: [],
   isLoading: false,
+  isOrderLoading: false,
   error: null,
+  searchQuery: '',
+  statusFilter: 'all',
+  currentPage: 1,
+  totalPages: 1,
+  totalOrders: 0,
 
   fetchStats: async () => {
     set({ isLoading: true, error: null });
@@ -38,13 +91,36 @@ export const useAdminStore = create<AdminState>((set) => ({
     }
   },
 
-  fetchOrders: async () => {
+  fetchOrders: async (params) => {
     set({ isLoading: true, error: null });
     try {
-      const { data } = await adminAPI.getOrders();
-      set({ orders: data, isLoading: false });
+      const { searchQuery, statusFilter, currentPage } = get();
+      const queryParams = {
+        search: params?.search ?? searchQuery,
+        status: params?.status ?? statusFilter,
+        page: params?.page ?? currentPage,
+        limit: 20,
+      };
+      const { data } = await adminAPI.getOrders(queryParams);
+      set({
+        orders: data.orders || data,
+        totalPages: data.totalPages || 1,
+        totalOrders: data.total || 0,
+        currentPage: data.page || 1,
+        isLoading: false,
+      });
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
+    }
+  },
+
+  fetchOrderById: async (id) => {
+    set({ isOrderLoading: true });
+    try {
+      const { data } = await adminAPI.getOrderById(id);
+      set({ selectedOrder: data, isOrderLoading: false });
+    } catch (err: any) {
+      set({ error: err.message, isOrderLoading: false });
     }
   },
 
@@ -72,22 +148,33 @@ export const useAdminStore = create<AdminState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await adminAPI.getUsers();
-      set({ users: data, isLoading: false });
+      set({ users: data.users || data, isLoading: false });
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
     }
   },
 
-  updateOrderStatus: async (id, status) => {
+  updateOrderStatus: async (id, status, note) => {
     try {
-      await adminAPI.updateOrderStatus(id, status);
+      await adminAPI.updateOrderStatus(id, status, note);
       set((state) => ({
         orders: state.orders.map((o) =>
           o._id === id ? { ...o, status } : o
         ),
+        selectedOrder:
+          state.selectedOrder?._id === id
+            ? {
+                ...state.selectedOrder,
+                status,
+                statusHistory: [
+                  ...state.selectedOrder.statusHistory,
+                  { status, changedAt: new Date().toISOString(), note: note || '' },
+                ],
+              }
+            : state.selectedOrder,
       }));
     } catch (err: any) {
-      throw new Error(err.message);
+      throw new Error(err.response?.data?.message || err.message);
     }
   },
 
@@ -111,5 +198,26 @@ export const useAdminStore = create<AdminState>((set) => ({
     } catch (err: any) {
       throw new Error(err.message);
     }
-  }
+  },
+
+  // Socket.io real-time actions
+  addOrder: (order) => {
+    set((state) => ({
+      orders: [order, ...state.orders],
+      totalOrders: state.totalOrders + 1,
+    }));
+  },
+
+  syncOrderStatus: (id, status) => {
+    set((state) => ({
+      orders: state.orders.map((o) => (o._id === id ? { ...o, status } : o)),
+      selectedOrder:
+        state.selectedOrder?._id === id
+          ? { ...state.selectedOrder, status }
+          : state.selectedOrder,
+    }));
+  },
+
+  setSearch: (q) => set({ searchQuery: q, currentPage: 1 }),
+  setStatusFilter: (s) => set({ statusFilter: s, currentPage: 1 }),
 }));

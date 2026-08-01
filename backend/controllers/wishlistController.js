@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const Product = require("../models/Product");
-const asyncHandler = require("../middleware/asyncHandler");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc    Toggle product in wishlist (Add/Remove)
 // @route   POST /api/wishlist/:productId

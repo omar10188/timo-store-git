@@ -24,19 +24,25 @@ export default function RegisterPage() {
     if (!name || !email || !password) { toast.error('Please fill all fields'); return; }
     if (password !== confirmPassword) { toast.error('Passwords do not match'); return; }
     if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    // Warn about password strength before sending to server
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      toast.error('Password must contain uppercase, lowercase, and a number');
+      return;
+    }
 
     setLoading(true);
     try {
-      const { data } = await authAPI.register({ name, email, password });
-      login(
-        { _id: data._id, name: data.name, email: data.email, role: data.role },
-        data.accessToken,
-        data.refreshToken
-      );
-      toast.success(`Welcome to Timo Store, ${data.name}!`);
-      router.push('/');
+      await authAPI.register({ name, email, password });
+      toast.success('Account created! Please sign in.');
+      router.push('/auth/login');
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Registration failed');
+      // Show the most specific error message from the backend
+      const errData = err?.response?.data;
+      const msg =
+        errData?.errors?.[0] ||   // Zod validation error
+        errData?.message ||        // General server message
+        'Registration failed';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -90,7 +96,7 @@ export default function RegisterPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min 6 characters"
+                placeholder="e.g. MyPass123"
                 required
                 style={{ paddingRight: '2.5rem' }}
               />
@@ -102,6 +108,9 @@ export default function RegisterPage() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.3rem' }}>
+              Must include uppercase, lowercase, and a number
+            </p>
           </div>
 
           <div>

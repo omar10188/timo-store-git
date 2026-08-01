@@ -31,8 +31,8 @@ export default function AdminDashboard() {
   const statCards = [
     { title: "Total Revenue", value: `$${stats.totalRevenue?.toFixed(2) || '0.00'}`, icon: DollarSign },
     { title: "Total Orders", value: stats.totalOrders || 0, icon: ShoppingBag },
+    { title: "Orders Today", value: stats.ordersToday ?? 0, icon: Activity },
     { title: "Total Users", value: stats.totalUsers || 0, icon: Users },
-    { title: "Active Products", value: stats.totalProducts || 0, icon: Activity },
   ];
 
   // Chart colors adapt to current CSS vars via recharts props

@@ -42,7 +42,7 @@ function getImageUrl(src: string) {
 export default function ProductCard({ product }: ProductCardProps) {
   const [addingToCart, setAddingToCart] = useState(false);
   const { isAuthenticated } = useAuthStore();
-  const { addItem, openCart } = useCartStore();
+  const { addToCartAsync } = useCartStore();
   const { productIds, toggleItem } = useWishlistStore();
 
   const isWishlisted = productIds.includes(product._id);
@@ -51,27 +51,34 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
+    console.log('🛒 ADD TO CART CLICKED:', product?._id, product?.name);
+
+    if (!product?._id) {
+      toast.error('Product ID missing');
+      console.error('❌ ADD TO CART FAILED: product._id is undefined');
+      return;
+    }
+
     if (!isAuthenticated) {
       toast.error('Please sign in to add to cart');
       return;
     }
+
     if (product.stock === 0) {
       toast.error('Out of stock');
       return;
     }
+
     setAddingToCart(true);
     try {
-      await cartAPI.add(product._id, 1);
-      addItem({
-        product: product._id,
+      await addToCartAsync(product._id, 1, {
         name: product.name,
         price: displayPrice,
         image: product.image,
-        quantity: 1,
       });
-      openCart();
       toast.success('Added to cart!');
-    } catch {
+    } catch (err: any) {
+      console.error('❌ Add to cart failed:', err);
       toast.error('Failed to add to cart');
     } finally {
       setAddingToCart(false);

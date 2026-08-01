@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect, authorize } = require("../middleware/authMiddleware");
+const { protect, optionalAuth, authorize } = require("../middleware/authMiddleware");
 const {
   createOrder,
   getMyOrders,
@@ -9,19 +9,13 @@ const {
   updateOrderStatus,
 } = require("../controllers/orderController");
 
-// All order routes require authentication
-router.use(protect);
+// Public/Guest Order Creation
+router.post("/", optionalAuth, createOrder);
 
-router.route("/")
-  .post(createOrder)
-  .get(authorize("admin"), getOrders); // Admin only
-
-router.get("/my-orders", getMyOrders);
-
-router.route("/:id")
-  .get(getOrderById);
-
-router.route("/:id/status")
-  .put(authorize("admin"), updateOrderStatus); // Admin only
+// Protected routes
+router.get("/my-orders", protect, getMyOrders);
+router.get("/", protect, authorize("admin"), getOrders);
+router.get("/:id", protect, getOrderById);
+router.put("/:id/status", protect, authorize("admin"), updateOrderStatus);
 
 module.exports = router;

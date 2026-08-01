@@ -1,7 +1,7 @@
 const Review = require("../models/Review");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
-const asyncHandler = require("../middleware/asyncHandler");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc    Create new review
 // @route   POST /api/reviews

@@ -34,7 +34,7 @@ export default function ProductDetailPage() {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   const { isAuthenticated } = useAuthStore();
-  const { addItem, openCart } = useCartStore();
+  const { addToCartAsync } = useCartStore();
   const { productIds, toggleItem } = useWishlistStore();
   const isWishlisted = productIds.includes(id);
 
@@ -61,18 +61,25 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async (redirect = false) => {
     if (!isAuthenticated) { toast.error('Please sign in to add to cart'); return; }
+    if (!product?._id) { toast.error('Product ID missing'); return; }
+
     setAddingToCart(true);
     try {
-      await cartAPI.add(product._id, quantity);
-      addItem({ product: product._id, name: product.name, price: product.salePrice || product.price, image: product.image, quantity });
+      await addToCartAsync(product._id, quantity, {
+        name: product.name,
+        price: product.salePrice || product.price,
+        image: product.image,
+      });
       toast.success('Added to cart!');
       if (redirect) {
         router.push('/checkout');
-      } else {
-        openCart();
       }
-    } catch { toast.error('Failed to add to cart'); }
-    finally { setAddingToCart(false); }
+    } catch (err) {
+      console.error('❌ Failed to add to cart:', err);
+      toast.error('Failed to add to cart');
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   const handleWishlist = async () => {

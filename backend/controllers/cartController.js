@@ -1,6 +1,7 @@
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
-const asyncHandler = require("../middleware/asyncHandler");
+const asyncHandler = require("../utils/asyncHandler");
+const { successResponse } = require("../utils/apiResponse");
 
 // @desc    Get the current user's cart
 // @route   GET /api/cart
@@ -15,7 +16,7 @@ const getCart = asyncHandler(async (req, res, next) => {
     cart = await Cart.create({ user: req.user._id, items: [], totalPrice: 0 });
   }
 
-  res.json(cart);
+  return successResponse(res, cart, "Cart fetched successfully");
 });
 
 // @desc    Add item to cart
@@ -97,7 +98,7 @@ const addToCart = asyncHandler(async (req, res, next) => {
 
   global.abandonedCartTimers.set(userIdStr, timer);
 
-  res.json(cart);
+  return successResponse(res, cart, "Item added to cart successfully");
 });
 
 // @desc    Update cart item quantity
@@ -140,7 +141,7 @@ const updateCartItem = asyncHandler(async (req, res, next) => {
   cart.items[itemIndex].quantity = Number(quantity);
   await cart.save();
   
-  res.json(cart);
+  return successResponse(res, cart, "Cart item updated successfully");
 });
 
 // @desc    Remove item from cart
@@ -161,7 +162,7 @@ const removeFromCart = asyncHandler(async (req, res, next) => {
   );
 
   await cart.save();
-  res.json(cart);
+  return successResponse(res, cart, "Item removed from cart successfully");
 });
 
 // @desc    Clear entire cart
@@ -173,7 +174,7 @@ const clearCart = asyncHandler(async (req, res, next) => {
     cart.items = [];
     await cart.save();
   }
-  res.json({ message: "Cart cleared successfully", items: [], totalPrice: 0 });
+  return successResponse(res, { items: [], totalPrice: 0 }, "Cart cleared successfully");
 });
 
 module.exports = {

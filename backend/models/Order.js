@@ -17,9 +17,12 @@ const orderSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Order must belong to a user"],
+      required: false,
       index: true
     },
+    customerName: { type: String, default: "" },
+    customerPhone: { type: String, default: "" },
+    customerAddress: { type: String, default: "" },
     items: [orderItemSchema], // Snapshots of product details at time of order
     subtotal: { 
       type: Number, 
@@ -38,15 +41,15 @@ const orderSchema = new mongoose.Schema(
       min: [0, "Total price cannot be negative"] 
     },
     shippingAddress: {
-      street: { type: String, required: [true, "Street address is required"] },
-      city: { type: String, required: [true, "City is required"] },
-      country: { type: String, required: [true, "Country is required"] },
+      street: { type: String, default: "" },
+      city: { type: String, default: "" },
+      country: { type: String, default: "" },
       postalCode: { type: String, default: "" },
     },
     paymentMethod: {
       type: String,
-      enum: ["stripe", "cash_on_delivery"],
-      default: "cash_on_delivery",
+      enum: ["stripe", "cash_on_delivery", "whatsapp"],
+      default: "whatsapp",
     },
     paymentStatus: {
       type: String,
@@ -65,6 +68,18 @@ const orderSchema = new mongoose.Schema(
     },
     cancelledAt: { type: Date, default: null },
     notes: { type: String, default: "" },
+    // Track every status change for a complete history log
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+          required: true,
+        },
+        changedAt: { type: Date, default: Date.now },
+        note: { type: String, default: "" },
+      },
+    ],
   },
   { timestamps: true }
 );

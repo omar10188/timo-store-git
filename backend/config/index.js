@@ -1,5 +1,12 @@
 require("dotenv").config();
 
+const requiredEnvVars = ["MONGO_URI", "JWT_SECRET", "JWT_REFRESH_SECRET"];
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    throw new Error(`Environment variable ${envVar} is missing!`);
+  }
+}
+
 module.exports = {
   env: process.env.NODE_ENV || "development",
   port: process.env.PORT || 5000,

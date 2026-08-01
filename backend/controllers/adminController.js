@@ -9,6 +9,10 @@ const { successResponse, errorResponse } = require("../utils/apiResponse");
  */
 const getDashboardStats = async (req, res, next) => {
   try {
+    // Start of today (midnight)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
     const [
       totalUsers,
       totalProducts,
@@ -16,6 +20,9 @@ const getDashboardStats = async (req, res, next) => {
       revenueResult,
       recentOrders,
       lowStockProducts,
+      salesDataResult,
+      topProductsResult,
+      ordersToday,
     ] = await Promise.all([
       User.countDocuments({ role: "user" }),
       Product.countDocuments(),
@@ -34,50 +41,128 @@ const getDashboardStats = async (req, res, next) => {
       Product.find({ stock: { $lt: 5 } })
         .select("name stock price")
         .limit(10),
-      // Sales data (Daily revenue for charts)
+      // Sales data (Daily revenue for charts — last 30 days)
       Order.aggregate([
         { $match: { paymentStatus: "paid" } },
-        { 
-          $group: { 
-            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, 
-            revenue: { $sum: "$totalPrice" } 
-          } 
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            revenue: { $sum: "$totalPrice" },
+          },
         },
         { $sort: { _id: 1 } },
-        { $limit: 30 }
+        { $limit: 30 },
       ]),
       // Top products (By quantity sold)
       Order.aggregate([
         { $match: { paymentStatus: "paid" } },
         { $unwind: "$items" },
-        { 
-          $group: { 
-            _id: "$items.name", 
+        {
+          $group: {
+            _id: "$items.name",
             totalSold: { $sum: "$items.quantity" },
-            revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
-          } 
+            revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
+          },
         },
         { $sort: { totalSold: -1 } },
-        { $limit: 5 }
-      ])
+        { $limit: 5 },
+      ]),
+      // Orders placed today
+      Order.countDocuments({ createdAt: { $gte: todayStart } }),
     ]);
 
     const totalRevenue = revenueResult[0]?.total || 0;
-    
+
     // Format salesData for Recharts
-    const salesData = salesDataResult.map(item => ({ date: item._id, revenue: item.revenue }));
-    const topProducts = topProductsResult.map(item => ({ name: item._id, sold: item.totalSold, revenue: item.revenue }));
+    const salesData = salesDataResult.map((item) => ({ date: item._id, revenue: item.revenue }));
+    const topProducts = topProductsResult.map((item) => ({
+      name: item._id,
+      sold: item.totalSold,
+      revenue: item.revenue,
+    }));
 
     res.json({
       totalUsers,
       totalProducts,
       totalOrders,
       totalRevenue,
+      ordersToday,
       recentOrders,
       lowStockProducts,
       salesData,
       topProducts,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/admin/orders
+ * Get all orders with search, filter, and pagination
+ */
+const getAdminOrders = async (req, res, next) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+    const statusFilter = req.query.status;
+    const search = req.query.search || "";
+
+    // Build base query
+    const query = {};
+    if (statusFilter && statusFilter !== "all") {
+      query.status = statusFilter;
+    }
+
+    // If search provided, find matching users first then filter orders
+    let userIds = [];
+    if (search) {
+      const matchingUsers = await User.find({
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+        ],
+      }).select("_id");
+      userIds = matchingUsers.map((u) => u._id);
+      query.user = { $in: userIds };
+    }
+
+    const total = await Order.countDocuments(query);
+
+    const orders = await Order.find(query)
+      .populate("user", "name email phone")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    res.json({
+      orders,
+      page,
+      totalPages: Math.ceil(total / limit),
+      total,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/admin/orders/:id
+ * Get a single order with full details
+ */
+const getAdminOrderById = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("user", "name email phone")
+      .lean();
+
+    if (!order) {
+      return next({ statusCode: 404, message: "Order not found" });
+    }
+
+    res.json(order);
   } catch (error) {
     next(error);
   }
@@ -177,4 +262,11 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-module.exports = { getDashboardStats, getAllUsers, updateUserRole, deleteUser };
+module.exports = {
+  getDashboardStats,
+  getAdminOrders,
+  getAdminOrderById,
+  getAllUsers,
+  updateUserRole,
+  deleteUser,
+};

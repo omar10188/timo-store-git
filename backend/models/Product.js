@@ -76,11 +76,10 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ name: 'text', description: 'text', brand: 'text' });
 productSchema.index({ price: 1, ratingsAverage: -1 });
 
-productSchema.pre("save", function (next) {
+productSchema.pre("save", function () {
   if (this.isModified("name") || !this.slug) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
-  next();
 });
 
 // Virtual for discounted price

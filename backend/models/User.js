@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,10})+$/,
         "Please provide a valid email address"
       ],
       index: true
@@ -45,14 +45,24 @@ const userSchema = new mongoose.Schema(
     emailVerificationToken: String,
     emailVerificationExpire: Date,
     resetPasswordToken: String,
-    resetPasswordExpire: Date,
-    refreshToken: { type: String, default: null },
+    sessions: [
+      {
+        tokenHash: { type: String, required: true },
+        fingerprint: { type: String, required: true },
+        device: { type: String, default: "Unknown Device" },
+        ip: { type: String, default: "Unknown IP" },
+        createdAt: { type: Date, default: Date.now },
+        expiresAt: { type: Date, required: true },
+      },
+    ],
     avatar: { type: String, default: "" },
     phone: { 
       type: String, 
       default: "",
-      match: [/^$|^\+?[1-9]\d{1,14}$/, "Please provide a valid phone number"]
+      match: [/^$|^\+?[0-9\s-]{7,15}$/, "Please provide a valid phone number"]
     },
+    totalOrders: { type: Number, default: 0 },
+    totalSpent: { type: Number, default: 0 },
     address: {
       street: { type: String, default: "" },
       city: { type: String, default: "" },
@@ -79,11 +89,10 @@ userSchema.virtual("fullAddress").get(function () {
 });
 
 // Pre-save hook to hash password
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // Compare password
