@@ -255,14 +255,14 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
           
-          {/* Add to Cart Button */}
+          {/* Add to Cart Button — Larger touch-friendly button */}
           <motion.button
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.96 }}
             onClick={handleAddToCart}
             disabled={addingToCart || product.stock === 0}
-            className="mt-3 sm:mt-4 flex w-full items-center justify-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl py-2 sm:py-2.5 text-xs sm:text-sm font-medium tracking-wide transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-3 sm:mt-4 flex h-11 sm:h-12 w-full items-center justify-center gap-2 rounded-xl py-3 text-sm sm:text-base font-bold tracking-wide transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
             style={{
-              border: '1px solid var(--color-gold)',
+              border: '1.5px solid var(--color-gold)',
               color: 'var(--color-gold)',
               background: 'transparent',
             }}
@@ -281,7 +281,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               <div className="h-4 w-4 sm:h-5 sm:w-5 animate-spin rounded-full border-b-2 border-t-2 border-current"></div>
             ) : (
               <>
-                <ShoppingCart size={14} className="sm:w-4 sm:h-4 transition-transform duration-300 group-hover:scale-110" />
+                <ShoppingCart size={16} className="transition-transform duration-300 group-hover:scale-110" />
                 <span>{product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}</span>
               </>
             )}

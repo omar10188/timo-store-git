@@ -124,16 +124,16 @@ export default function Footer() {
 
         <div className="h-px w-full mb-8" style={{ background: 'var(--color-border)' }} />
 
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
           <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
             © {new Date().getFullYear()} Timo Store. All rights reserved.
           </p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             {['Privacy Policy', 'Terms of Service', 'Refund Policy'].map((item) => (
               <Link
                 key={item}
                 href="#"
-                className="text-sm transition-colors duration-300"
+                className="text-xs sm:text-sm transition-colors duration-300"
                 style={{ color: 'var(--color-text-muted)' }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-text-primary)')}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)')}
