@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   ShoppingCart, Heart, Star, ArrowLeft, Minus, Plus,
   Share2, Check, Sparkles, ChevronDown, ChevronUp,
-  Truck, Tag, RotateCcw, CreditCard,
+  Truck, Tag, RotateCcw, CreditCard, ThumbsUp, CheckCircle2,
 } from 'lucide-react';
 import { productsAPI, reviewsAPI, wishlistAPI } from '@/lib/api';
 import { useCartStore, useWishlistStore, useAuthStore } from '@/lib/store';
@@ -28,6 +28,9 @@ interface Review {
   title?: string;
   comment: string;
   createdAt: string;
+  verifiedPurchase?: boolean;
+  images?: string[];
+  helpfulCount?: number;
 }
 
 /* ── Design tokens (scoped to this page) ─────────────────────────── */
@@ -1007,47 +1010,27 @@ export default function ProductDetailPage() {
               {/* Reviews List */}
               {reviews.length === 0 ? (
                 <div style={{
-                  textAlign: 'center', padding: '3rem 2rem',
+                  textAlign: 'center', padding: '3.5rem 2rem',
                   background: DS.card, borderRadius: DS.radius,
                   border: `1px solid ${DS.border}`,
                   color: DS.textMuted, fontSize: '0.875rem',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
                 }}>
-                  No reviews yet. Be the first to review!
+                  <Star size={32} style={{ color: DS.gold, opacity: 0.5 }} />
+                  <div>
+                    <p style={{ fontWeight: 700, color: DS.textPrimary, marginBottom: 4 }}>No reviews yet</p>
+                    <p style={{ fontSize: '0.8rem', color: DS.textMuted }}>Be the first customer to share your experience with this fragrance!</p>
+                  </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-                  {reviews.map((r) => (
-                    <div key={r._id} style={{
-                      background: DS.card,
-                      border: `1px solid ${DS.border}`,
-                      borderRadius: DS.radiusMd,
-                      padding: '1.2rem 1.4rem',
-                    }}>
-                      <div style={{
-                        display: 'flex', justifyContent: 'space-between',
-                        alignItems: 'flex-start', marginBottom: '0.7rem',
-                        flexWrap: 'wrap', gap: '0.5rem',
-                      }}>
-                        <div>
-                          <p style={{ fontWeight: 700, fontSize: '0.875rem', color: DS.textPrimary, marginBottom: '0.1rem' }}>
-                            {r.user?.name || 'Anonymous'}
-                          </p>
-                          <p style={{ fontSize: '0.7rem', color: DS.textMuted }}>
-                            {new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </p>
-                        </div>
-                        <StarRating rating={r.rating} size={13} />
-                      </div>
-                      {r.title && (
-                        <p style={{ fontWeight: 600, fontSize: '0.85rem', color: DS.textPrimary, marginBottom: '0.35rem' }}>
-                          {r.title}
-                        </p>
-                      )}
-                      <p style={{ color: DS.textSecondary, fontSize: '0.845rem', lineHeight: 1.7 }}>
-                        {r.comment}
-                      </p>
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {reviews.map((r) => {
+                    const userName = r.user?.name || 'Anonymous Buyer';
+                    const initial = userName.charAt(0).toUpperCase();
+                    return (
+                      <ReviewCard key={r._id} review={r} userName={userName} initial={initial} />
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1262,5 +1245,175 @@ function Thumbnail({
         }}
       />
     </button>
+  );
+}
+
+/* ── Modern Review Card Component ────────────────────────────────── */
+function ReviewCard({
+  review: r, userName, initial,
+}: { review: Review; userName: string; initial: string }) {
+  const [helpfulCount, setHelpfulCount] = useState(r.helpfulCount || 0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [activePhoto, setActivePhoto] = useState<string | null>(null);
+
+  const handleHelpful = () => {
+    if (isLiked) {
+      setHelpfulCount((c) => Math.max(0, c - 1));
+      setIsLiked(false);
+    } else {
+      setHelpfulCount((c) => c + 1);
+      setIsLiked(true);
+    }
+  };
+
+  return (
+    <div style={{
+      background: DS.card,
+      border: `1px solid ${DS.border}`,
+      borderRadius: DS.radiusMd,
+      padding: '1.35rem 1.5rem',
+      boxShadow: DS.shadowSm,
+      transition: 'border-color 0.2s ease',
+    }}>
+      {/* Top Header Row */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between',
+        alignItems: 'flex-start', marginBottom: '0.85rem',
+        flexWrap: 'wrap', gap: '0.75rem',
+      }}>
+        {/* User Info */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Avatar / Initial circle */}
+          {r.user?.avatar ? (
+            <img
+              src={getImageUrl(r.user.avatar)}
+              alt={userName}
+              style={{
+                width: 42, height: 42, borderRadius: '50%',
+                objectFit: 'cover', border: `1.5px solid ${DS.border}`,
+              }}
+            />
+          ) : (
+            <div style={{
+              width: 42, height: 42, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #2a2a2a, #181818)',
+              border: `1.5px solid ${DS.border}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: DS.gold, fontWeight: 800, fontSize: '0.95rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+              flexShrink: 0,
+            }}>
+              {initial}
+            </div>
+          )}
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <p style={{ fontWeight: 700, fontSize: '0.9rem', color: DS.textPrimary, margin: 0 }}>
+                {userName}
+              </p>
+              {/* Verified Buyer Badge */}
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                fontSize: '0.68rem', fontWeight: 600, color: '#4caf7d',
+                background: 'rgba(76,175,125,0.10)',
+                border: '1px solid rgba(76,175,125,0.22)',
+                borderRadius: 12, padding: '2px 8px',
+              }}>
+                <CheckCircle2 size={10} /> Verified Buyer
+              </span>
+            </div>
+            <p style={{ fontSize: '0.72rem', color: DS.textMuted, marginTop: 2 }}>
+              {new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
+          </div>
+        </div>
+
+        {/* Rating */}
+        <StarRating rating={r.rating} size={14} />
+      </div>
+
+      {/* Review Title */}
+      {r.title && (
+        <h4 style={{
+          fontWeight: 700, fontSize: '0.9rem',
+          color: DS.textPrimary, marginBottom: '0.4rem',
+        }}>
+          {r.title}
+        </h4>
+      )}
+
+      {/* Review Body */}
+      <p style={{
+        color: DS.textSecondary, fontSize: '0.86rem',
+        lineHeight: 1.75, margin: '0 0 1rem',
+      }}>
+        {r.comment}
+      </p>
+
+      {/* Customer Photos Gallery (if any) */}
+      {r.images && r.images.length > 0 && (
+        <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          {r.images.map((img, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActivePhoto(img)}
+              style={{
+                width: 68, height: 68, borderRadius: 10, overflow: 'hidden',
+                border: `1px solid ${DS.border}`, padding: 0, background: 'none',
+                cursor: 'pointer', flexShrink: 0,
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
+            >
+              <img src={getImageUrl(img)} alt={`Customer photo ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Footer / Helpful action */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        paddingTop: '0.65rem', borderTop: `1px solid ${DS.border}`,
+      }}>
+        <button
+          onClick={handleHelpful}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+            background: isLiked ? 'rgba(255,255,255,0.08)' : 'transparent',
+            border: `1px solid ${isLiked ? 'rgba(255,255,255,0.3)' : 'transparent'}`,
+            borderRadius: 8, padding: '4px 10px',
+            color: isLiked ? DS.textPrimary : DS.textMuted,
+            fontSize: '0.75rem', fontWeight: 600,
+            cursor: 'pointer', transition: 'all 0.15s ease',
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          <ThumbsUp size={13} style={{ color: isLiked ? DS.gold : 'currentColor' }} />
+          <span>Helpful {helpfulCount > 0 ? `(${helpfulCount})` : ''}</span>
+        </button>
+      </div>
+
+      {/* Lightbox photo modal */}
+      {activePhoto && (
+        <div
+          onClick={() => setActivePhoto(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 999,
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '2rem', cursor: 'zoom-out',
+          }}
+        >
+          <img
+            src={getImageUrl(activePhoto)}
+            alt="Customer photo"
+            style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 16, objectFit: 'contain', boxShadow: DS.shadowLg }}
+          />
+        </div>
+      )}
+    </div>
   );
 }
