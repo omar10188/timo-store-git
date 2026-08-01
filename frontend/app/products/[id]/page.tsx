@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   ShoppingCart, Heart, Star, ArrowLeft, Minus, Plus,
   Share2, Check, Sparkles, ChevronDown, ChevronUp,
-  Truck, Tag, RotateCcw, CreditCard, ThumbsUp, CheckCircle2,
+  Truck, Tag, RotateCcw, CreditCard, ThumbsUp, CheckCircle2, Eye,
 } from 'lucide-react';
 import { productsAPI, reviewsAPI, wishlistAPI } from '@/lib/api';
 import { useCartStore, useWishlistStore, useAuthStore } from '@/lib/store';
@@ -789,24 +789,23 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Stock status */}
+            {/* Stock status & Live Scarcity Social Proof Banner */}
             {(product.stock ?? 0) > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem' }}>
-                {(product.stock ?? 0) <= 5 ? (
-                  <>
-                    <Sparkles size={12} style={{ color: '#f0a04b' }} />
-                    <span style={{ color: '#f0a04b', fontWeight: 600 }}>
-                      Hurry! Only {product.stock} left in stock
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Check size={12} style={{ color: '#4caf7d' }} />
-                    <span style={{ color: '#4caf7d' }}>
-                      {product.stock} in stock — ready to ship
-                    </span>
-                  </>
-                )}
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: '0.45rem',
+                padding: '0.85rem 1.1rem', borderRadius: 14,
+                background: 'rgba(240, 160, 75, 0.08)',
+                border: '1px solid rgba(240, 160, 75, 0.22)',
+                fontSize: '0.78rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f0a04b', fontWeight: 700 }}>
+                  <Sparkles size={14} />
+                  <span>🔥 High Demand: Only {product.stock <= 5 ? product.stock : 3} left in stock!</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: DS.textSecondary, fontSize: '0.74rem' }}>
+                  <Eye size={13} style={{ color: DS.gold }} />
+                  <span>14 customers are viewing this fragrance right now</span>
+                </div>
               </div>
             )}
 

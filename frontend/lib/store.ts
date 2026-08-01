@@ -24,6 +24,7 @@ interface AuthState {
 }
 
 import { cartAPI } from './api';
+import { trackAddToCart } from './analytics';
 
 interface CartState {
   items: CartItem[];
@@ -102,6 +103,7 @@ export const useCartStore = create<CartState>()(
         }
         const totalPrice = items.reduce((s, i) => s + i.price * i.quantity, 0);
         set({ items, totalPrice });
+        trackAddToCart({ id: newItem.product, name: newItem.name, price: newItem.price, quantity: newItem.quantity });
       },
 
       addToCartAsync: async (productId, quantity = 1, itemData) => {

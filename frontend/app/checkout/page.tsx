@@ -6,6 +6,7 @@ import { ordersAPI, couponsAPI } from '@/lib/api';
 import { useAuthStore, useCartStore } from '@/lib/store';
 import toast from 'react-hot-toast';
 import { CheckCircle, Tag, X, MessageSquare, ShoppingBag, ArrowRight } from 'lucide-react';
+import { trackInitiateCheckout, trackPurchase } from '@/lib/analytics';
 
 export default function CheckoutPage() {
   const { user } = useAuthStore();
@@ -30,10 +31,30 @@ export default function CheckoutPage() {
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number; finalTotal: number } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
 
+  // Auto-fill customer info from localStorage or user session
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem('timo-customer-info');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.name && !name) setName(parsed.name);
+        if (parsed.phone && !phone) setPhone(parsed.phone);
+        if (parsed.address && !address) setAddress(parsed.address);
+      }
+    } catch {}
     if (user?.name && !name) setName(user.name);
     if (user?.phone && !phone) setPhone(user.phone);
   }, [user]);
+
+  // Track InitiateCheckout on page mount
+  useEffect(() => {
+    if (items.length > 0) {
+      trackInitiateCheckout(
+        items.map((i) => ({ id: i.product, name: i.name, price: i.price, quantity: i.quantity })),
+        totalPrice
+      );
+    }
+  }, []);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -41,7 +62,7 @@ export default function CheckoutPage() {
     try {
       const { data } = await couponsAPI.validate(couponCode, totalPrice);
       setCouponApplied({ code: data.code, discountAmount: data.discountAmount, finalTotal: data.finalTotal });
-      toast.success(`Coupon applied! Saved $${data.discountAmount.toFixed(2)}`);
+      toast.success(`Coupon applied! Saved EGP ${data.discountAmount.toFixed(2)} 🎉`);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Invalid coupon code');
     } finally {
@@ -76,6 +97,14 @@ export default function CheckoutPage() {
       const order = responsePayload.order || responsePayload;
       const whatsappUrl = responsePayload.whatsappUrl;
       const whatsappMessage = responsePayload.whatsappMessage;
+
+      // Save customer info to localStorage for auto-fill on next visit
+      try {
+        localStorage.setItem('timo-customer-info', JSON.stringify({ name, phone, address }));
+      } catch {}
+
+      // Track purchase event
+      trackPurchase(order._id, order.totalPrice || totalPrice);
 
       // 2. Clear Cart
       clearCart();

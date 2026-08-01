@@ -208,10 +208,40 @@ const validateCoupon = asyncHandler(async (req, res, next) => {
     return next(err);
   }
 
-  const coupon = await Coupon.findOne({ code: code.toUpperCase() });
+  const upperCode = code.toUpperCase();
+  let coupon = await Coupon.findOne({ code: upperCode });
+
+  // Fallback promo coupons (built-in welcome & cart value discounts)
+  if (!coupon) {
+    if (upperCode === "WELCOME10") {
+      coupon = {
+        code: "WELCOME10",
+        type: "percent",
+        discountValue: 10,
+        minOrderValue: 0,
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        isActive: true,
+        usageLimit: null,
+        usedCount: 0,
+        usedBy: [],
+      };
+    } else if (upperCode === "SAVE50") {
+      coupon = {
+        code: "SAVE50",
+        type: "fixed",
+        discountValue: 50,
+        minOrderValue: 500,
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        isActive: true,
+        usageLimit: null,
+        usedCount: 0,
+        usedBy: [],
+      };
+    }
+  }
 
   if (!coupon) {
-    const err = new Error("Invalid coupon code");
+    const err = new Error("Invalid coupon code. Try WELCOME10 for 10% off!");
     err.statusCode = 404;
     return next(err);
   }
