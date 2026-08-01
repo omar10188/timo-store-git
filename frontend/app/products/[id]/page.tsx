@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ShoppingCart, Heart, Star, ArrowLeft, Minus, Plus,
@@ -52,46 +52,97 @@ const DS = {
   radiusSm: '8px',
 };
 
-/* ── Accordion ───────────────────────────────────────────────────── */
+/* ── Animated Accordion ──────────────────────────────────────────── */
 function Accordion({
-  title, children, defaultOpen = false,
-}: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  title, children, defaultOpen = false, icon,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  icon?: React.ReactNode;
+}) {
   const [open, setOpen] = useState(defaultOpen);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<string>(defaultOpen ? 'auto' : '0px');
+
+  // Animate height on toggle
+  React.useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    if (open) {
+      // Measure real height, then animate
+      const h = el.scrollHeight;
+      setHeight(`${h}px`);
+      // After transition, let it be auto so it can resize freely
+      const t = setTimeout(() => setHeight('auto'), 300);
+      return () => clearTimeout(t);
+    } else {
+      // Snap to measured height first, then animate to 0
+      const h = el.scrollHeight;
+      setHeight(`${h}px`);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setHeight('0px'));
+      });
+    }
+  }, [open]);
+
   return (
     <div style={{
-      border: `1px solid ${DS.border}`,
+      border: `1px solid ${open ? 'rgba(255,255,255,0.12)' : DS.border}`,
       borderRadius: DS.radiusMd,
       overflow: 'hidden',
+      transition: 'border-color 0.25s ease',
     }}>
       <button
         onClick={() => setOpen(!open)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0.9rem 1.2rem',
-          background: DS.elevated,
+          padding: '0.95rem 1.2rem',
+          background: open ? DS.card : DS.elevated,
           border: 'none', cursor: 'pointer',
           color: DS.textPrimary, fontSize: '0.88rem',
           fontWeight: 600, letterSpacing: '0.04em',
           fontFamily: 'var(--font-body)',
+          transition: 'background 0.2s ease',
+          gap: '0.6rem',
         }}
       >
-        <span>{title}</span>
-        {open
-          ? <ChevronUp size={15} style={{ color: DS.textMuted }} />
-          : <ChevronDown size={15} style={{ color: DS.textMuted }} />}
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {icon && <span style={{ color: DS.gold, display: 'flex' }}>{icon}</span>}
+          {title}
+        </span>
+        <ChevronDown
+          size={15}
+          style={{
+            color: DS.textMuted,
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.25s ease',
+            flexShrink: 0,
+          }}
+        />
       </button>
-      {open && (
+
+      {/* Animated content wrapper */}
+      <div
+        ref={contentRef}
+        style={{
+          height,
+          overflow: 'hidden',
+          transition: 'height 0.28s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
         <div style={{
-          padding: '1rem 1.2rem',
+          padding: '1rem 1.2rem 1.1rem',
           background: DS.card,
           color: DS.textSecondary,
           fontSize: '0.875rem',
-          lineHeight: 1.8,
+          lineHeight: 1.85,
+          borderTop: `1px solid ${DS.border}`,
         }}>
           {children}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -354,6 +405,7 @@ export default function ProductDetailPage() {
   const [newComment, setNewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const { isAuthenticated } = useAuthStore();
   const { addToCartAsync } = useCartStore();
@@ -614,45 +666,77 @@ export default function ProductDetailPage() {
               {product.description || 'No description available.'}
             </Accordion>
 
-            {/* Main Notes */}
+            {/* Main Notes (Interactive Selectable Tags) */}
             {product.tags?.length > 0 && (
               <div>
-                <p style={{
-                  fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em',
-                  textTransform: 'uppercase', color: DS.textMuted, marginBottom: '0.65rem',
-                }}>
-                  Main Notes
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                  <p style={{
+                    fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em',
+                    textTransform: 'uppercase', color: DS.textMuted, margin: 0,
+                  }}>
+                    Main Notes
+                  </p>
+                  {selectedTags.length > 0 && (
+                    <button
+                      onClick={() => setSelectedTags([])}
+                      style={{
+                        fontSize: '0.7rem', color: DS.gold, background: 'none', border: 'none',
+                        cursor: 'pointer', padding: 0, textDecoration: 'underline',
+                      }}
+                    >
+                      Clear selection
+                    </button>
+                  )}
+                </div>
                 <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
-                  {product.tags.map((tag: string) => (
-                    <NoteTag key={tag}>{tag}</NoteTag>
-                  ))}
+                  {product.tags.map((tag: string) => {
+                    const isSelected = selectedTags.includes(tag);
+                    return (
+                      <NoteTag
+                        key={tag}
+                        active={isSelected}
+                        onClick={() => {
+                          setSelectedTags((prev) =>
+                            isSelected ? prev.filter((t) => t !== tag) : [...prev, tag]
+                          );
+                        }}
+                      >
+                        {tag}
+                      </NoteTag>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Quantity Selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={{ fontSize: '0.78rem', color: DS.textMuted, fontWeight: 600 }}>Quantity</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <span style={{ fontSize: '0.78rem', color: DS.textMuted, fontWeight: 600, letterSpacing: '0.04em' }}>
+                Quantity
+              </span>
               <div style={{
                 display: 'flex', alignItems: 'center',
-                border: `1px solid ${DS.border}`,
-                borderRadius: DS.radiusSm, overflow: 'hidden',
+                border: `1.5px solid ${DS.border}`,
+                borderRadius: 14, overflow: 'hidden',
                 background: DS.card,
+                height: 44,
               }}>
                 <QuantityBtn onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}>
-                  <Minus size={12} />
+                  <Minus size={13} />
                 </QuantityBtn>
                 <span style={{
-                  width: 46, textAlign: 'center', fontWeight: 800,
+                  width: 50, textAlign: 'center', fontWeight: 800,
                   color: DS.textPrimary, fontSize: '0.95rem',
-                  height: 40, lineHeight: '40px',
+                  height: 44, lineHeight: '44px',
                   background: DS.elevated,
+                  borderLeft: `1px solid ${DS.border}`,
+                  borderRight: `1px solid ${DS.border}`,
+                  userSelect: 'none',
                 }}>
                   {quantity}
                 </span>
                 <QuantityBtn onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))} disabled={quantity >= (product.stock || 99)}>
-                  <Plus size={12} />
+                  <Plus size={13} />
                 </QuantityBtn>
               </div>
             </div>
@@ -1016,42 +1100,76 @@ export default function ProductDetailPage() {
 
 /* ── Sub-components (co-located for simplicity) ─────────────────── */
 
-function NoteTag({ children }: { children: React.ReactNode }) {
-  const [hovered, setHovered] = useState(false);
+/* ── Selectable Note Tag ─────────────────────────────────────────── */
+function NoteTag({
+  children, active, onClick,
+}: { children: React.ReactNode; active?: boolean; onClick?: () => void }) {
+  const [pressed, setPressed] = useState(false);
   return (
-    <span
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+    <button
+      onClick={onClick}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onMouseLeave={() => setPressed(false)}
       style={{
-        padding: '4px 14px', borderRadius: 20,
-        border: `1px solid ${hovered ? 'rgba(255,255,255,0.35)' : DS.border}`,
-        background: hovered ? 'rgba(255,255,255,0.05)' : DS.elevated,
-        color: hovered ? DS.textPrimary : DS.textSecondary,
-        fontSize: '0.76rem', fontWeight: 500,
-        cursor: 'default', transition: 'all 0.2s ease',
+        padding: '5px 14px', borderRadius: 20,
+        border: `1px solid ${
+          active ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.13)'
+        }`,
+        background: active
+          ? 'rgba(255,255,255,0.12)'
+          : pressed
+            ? 'rgba(255,255,255,0.06)'
+            : DS.elevated,
+        color: active ? DS.textPrimary : DS.textSecondary,
+        fontSize: '0.76rem', fontWeight: active ? 700 : 500,
+        cursor: 'pointer',
+        transition: 'all 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+        transform: pressed ? 'scale(0.95)' : active ? 'scale(1.04)' : 'scale(1)',
+        display: 'flex', alignItems: 'center', gap: '0.3rem',
+        fontFamily: 'var(--font-body)',
+        userSelect: 'none',
+        boxShadow: active ? '0 0 12px rgba(255,255,255,0.08)' : 'none',
       }}
     >
+      {active && (
+        <Check size={10} style={{ color: DS.textPrimary, flexShrink: 0 }} />
+      )}
       {children}
-    </span>
+    </button>
   );
 }
 
-function QuantityBtn({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+/* ── Quantity Button ─────────────────────────────────────────────── */
+function QuantityBtn({
+  children, onClick, disabled,
+}: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+  const [pressed, setPressed] = useState(false);
   return (
     <button
       onClick={disabled ? undefined : onClick}
+      onMouseDown={() => { if (!disabled) setPressed(true); }}
+      onMouseUp={() => setPressed(false)}
+      onMouseLeave={() => setPressed(false)}
       style={{
-        width: 38, height: 40,
-        background: DS.elevated,
-        border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+        width: 44, height: 44,
+        background: pressed && !disabled ? 'rgba(255,255,255,0.12)' : DS.elevated,
+        border: 'none',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         color: disabled ? DS.textMuted : DS.textPrimary,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        opacity: disabled ? 0.4 : 1,
-        transition: 'background 0.15s',
+        opacity: disabled ? 0.35 : 1,
+        /* Spring bounce on press */
+        transform: pressed && !disabled ? 'scale(0.85)' : 'scale(1)',
+        transition: pressed
+          ? 'transform 0.06s ease, background 0.1s'
+          : 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background 0.15s',
         fontFamily: 'var(--font-body)',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+        /* Larger touch target for mobile */
+        minWidth: 44,
       }}
-      onMouseEnter={(e) => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = DS.elevated; }}
     >
       {children}
     </button>
