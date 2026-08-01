@@ -1038,27 +1038,62 @@ export default function ProductDetailPage() {
         </section>
 
         {/* ═════════════════════════════════════════════════════════
-            YOU MIGHT ALSO LIKE
+            YOU MIGHT ALSO LIKE (Related Products Grid)
         ═════════════════════════════════════════════════════════ */}
         {recommendations.length > 0 && (
-          <section style={{ marginBottom: '3rem' }}>
+          <section style={{ marginBottom: '4rem' }}>
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2.5rem',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              textAlign: 'center', marginBottom: '2.5rem',
             }}>
-              <div style={{ height: 1, flex: 1, background: DS.border }} />
+              <span style={{
+                fontSize: '0.72rem', letterSpacing: '0.16em', textTransform: 'uppercase',
+                color: DS.gold, fontWeight: 700, marginBottom: '0.4rem',
+              }}>
+                Curated Selection
+              </span>
               <h2 style={{
-                fontFamily: 'var(--font-heading)', fontSize: '1.6rem', fontWeight: 700,
-                color: DS.textPrimary, margin: 0, whiteSpace: 'nowrap',
+                fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.5rem, 2.5vw, 2.1rem)',
+                fontWeight: 700, color: DS.textPrimary, margin: 0,
               }}>
                 You might also like
               </h2>
-              <div style={{ height: 1, flex: 1, background: DS.border }} />
+              <p style={{ fontSize: '0.82rem', color: DS.textMuted, marginTop: '0.4rem', maxWidth: 460 }}>
+                Explore complementary fragrances from our exclusive collection
+              </p>
             </div>
+
             <div className="products-grid">
               {recommendations.slice(0, 8).map((p) => (
                 <ProductCard key={p._id} product={p} />
               ))}
             </div>
+
+            {recommendations.length > 4 && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2.5rem' }}>
+                <button
+                  onClick={() => router.push('/products')}
+                  style={{
+                    padding: '0.8rem 2rem', borderRadius: 20,
+                    border: `1.5px solid ${DS.border}`,
+                    background: DS.elevated, color: DS.textPrimary,
+                    fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.06em',
+                    cursor: 'pointer', transition: 'all 0.2s ease',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.4)';
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = DS.border;
+                    (e.currentTarget as HTMLElement).style.transform = 'none';
+                  }}
+                >
+                  See all fragrances
+                </button>
+              </div>
+            )}
           </section>
         )}
       </div>

@@ -246,11 +246,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             <div className="flex flex-col">
               {hasDiscount && (
                 <span className="text-[10px] sm:text-xs line-through" style={{ color: 'var(--color-text-muted)' }}>
-                  ${product.price.toFixed(2)}
+                  EGP {product.price.toFixed(2)}
                 </span>
               )}
-              <span className="text-base sm:text-lg font-semibold" style={{ color: 'var(--color-gold)' }}>
-                ${displayPrice.toFixed(2)}
+              <span className="text-base sm:text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                EGP {displayPrice.toFixed(2)}
               </span>
             </div>
           </div>
