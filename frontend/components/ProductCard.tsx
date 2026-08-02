@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useCallback } from 'react';
-import { ShoppingCart, Heart, Star, Eye } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Eye, Pencil, Trash2 } from 'lucide-react';
 import {
   motion,
   useMotionValue,
@@ -13,8 +13,9 @@ import {
   type Transition,
 } from 'framer-motion';
 import { useCartStore, useWishlistStore, useAuthStore } from '@/lib/store';
-import { wishlistAPI } from '@/lib/api';
+import { wishlistAPI, productsAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
+import AdminQuickEditModal from './AdminQuickEditModal';
 
 export interface Product {
   _id: string;
@@ -26,6 +27,7 @@ export interface Product {
   images?: string[];
   description?: string;
   category?: string | { _id: string; name: string };
+  categories?: { _id: string; name: string }[];
   categoryName?: string;
   brand?: string;
   stock?: number;
@@ -42,9 +44,9 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
 function getImageUrl(src: string) {
-  if (!src) return '/placeholder.png';
-  if (src.startsWith('http')) return src;
-  return `${API_BASE}${src}`;
+  if (!src) return '';
+  const decoded = src.startsWith('http') ? src : `${API_BASE}${src}`;
+  return encodeURI(decoded);
 }
 
 // ─── Typed spring configs — premium pace ───────────────────────────────────────────
@@ -70,16 +72,19 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [cartPulsed, setCartPulsed]     = useState(false);
   const [isHovered, setIsHovered]       = useState(false);
   const [sweepActive, setSweepActive]   = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { addToCartAsync }  = useCartStore();
   const { productIds, toggleItem } = useWishlistStore();
   const router = useRouter();
 
+  const isAdmin = user?.role === 'admin';
+
   const isWishlisted = productIds.includes(product._id);
   const displayPrice = product.salePrice || product.price;
-  const hasDiscount  = product.discount && product.discount > 0;
+  const hasDiscount  = Boolean(product.discount && product.discount > 0);
 
   // ─── Parallax mouse tracking ─────────────────────────────────────────────
   const mouseX = useMotionValue(0);
@@ -161,6 +166,19 @@ export default function ProductCard({ product }: ProductCardProps) {
       toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist! ❤️');
     } catch {
       toast.error('Failed to update wishlist');
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Are you sure you want to delete this product?')) {
+      try {
+        await productsAPI.delete(product._id);
+        toast.success('Product deleted successfully');
+        window.location.reload();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to delete product');
+      }
     }
   };
 
@@ -294,6 +312,53 @@ export default function ProductCard({ product }: ProductCardProps) {
 
             {/* ── Action icons ── */}
             <div className="absolute right-2 top-2 sm:right-3 sm:top-3 flex flex-col gap-1.5 z-20">
+              {isAdmin && (
+                <>
+                  <motion.button
+                    onClick={(e) => { e.stopPropagation(); setIsEditModalOpen(true); }}
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={isHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: 12 }}
+                    transition={{ ...springBouncy, delay: 0 }}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.85 }}
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl backdrop-blur-md"
+                    style={{
+                      border: '1px solid var(--color-border)',
+                      background: 'rgba(26,26,26,0.85)',
+                      color: 'var(--color-text-muted)',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gold)';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--color-gold)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
+                    }}
+                    aria-label="Edit Product"
+                  >
+                    <Pencil size={14} />
+                  </motion.button>
+                  <motion.button
+                    onClick={handleDelete}
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={isHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: 12 }}
+                    transition={{ ...springBouncy, delay: 0.03 }}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.85 }}
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl backdrop-blur-md"
+                    style={{
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      color: 'rgb(239, 68, 68)',
+                    }}
+                    aria-label="Delete Product"
+                  >
+                    <Trash2 size={14} />
+                  </motion.button>
+                </>
+              )}
+
               <motion.button
                 onClick={handleWishlist}
                 initial={{ opacity: 0, x: 12 }}
@@ -344,13 +409,35 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="relative mt-3 sm:mt-4 flex flex-col z-10 flex-1">
             {/* Brand & Rating */}
             <div className="mb-1 sm:mb-2 flex items-center justify-between">
-              {(product.categoryName || product.brand) && (
-                <span
-                  className="text-[10px] sm:text-xs tracking-widest uppercase"
-                  style={{ color: 'var(--color-gold)' }}
-                >
-                  {product.brand || product.categoryName}
-                </span>
+              {(product.categories?.length ? true : product.categoryName || product.brand) && (
+                <div className="flex flex-wrap gap-1 items-center">
+                  {product.brand && (
+                    <span className="text-[10px] sm:text-xs tracking-widest uppercase" style={{ color: 'var(--color-gold)' }}>
+                      {product.brand}
+                    </span>
+                  )}
+                  {product.categories && product.categories.length > 0 ? (
+                    <>
+                      {product.brand && <span className="text-[10px] sm:text-xs opacity-50" style={{ color: 'var(--color-gold)' }}>•</span>}
+                      {product.categories.slice(0, 3).map((cat, idx) => (
+                        <span key={cat._id} className="text-[10px] sm:text-xs tracking-widest uppercase" style={{ color: 'var(--color-gold)' }}>
+                          {idx > 0 && <span className="mx-1 opacity-50">•</span>}
+                          {cat.name}
+                        </span>
+                      ))}
+                      {product.categories.length > 3 && (
+                        <span className="text-[9px] sm:text-[10px] ml-1 px-1 rounded bg-[#D4AF37]/20 text-[#D4AF37]">
+                          +{product.categories.length - 3}
+                        </span>
+                      )}
+                    </>
+                  ) : product.categoryName && (
+                    <span className="text-[10px] sm:text-xs tracking-widest uppercase" style={{ color: 'var(--color-gold)' }}>
+                      {product.brand ? <span className="mx-1 opacity-50">•</span> : null}
+                      {product.categoryName}
+                    </span>
+                  )}
+                </div>
               )}
               {(product.numReviews ?? 0) > 0 && (
                 <div className="flex items-center gap-1">
@@ -455,6 +542,13 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         </motion.article>
       </motion.div>
+
+      <AdminQuickEditModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        product={product} 
+        onUpdateSuccess={() => window.location.reload()} 
+      />
     </div>
   );
 }

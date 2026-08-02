@@ -1,12 +1,14 @@
 import { MetadataRoute } from 'next';
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://timo-store.vercel.app';
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/profile/', '/checkout/', '/api/'],
+      disallow: ['/admin', '/admin/*'], // Prevent crawling of admin pages
     },
-    sitemap: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'http://localhost:3000'}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ordersAPI, couponsAPI } from '@/lib/api';
 import { useAuthStore, useCartStore } from '@/lib/store';
 import toast from 'react-hot-toast';
+import LuxuryWhatsAppButton from '@/components/ui/LuxuryWhatsAppButton';
 import { CheckCircle, Tag, X, MessageSquare, ShoppingBag, ArrowRight } from 'lucide-react';
 import { trackInitiateCheckout, trackPurchase } from '@/lib/analytics';
 
@@ -74,6 +75,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (!name.trim()) { toast.error('Please enter your name'); return; }
     if (!phone.trim()) { toast.error('Please enter your phone number'); return; }
+    if (!address.trim()) { toast.error('Please enter your delivery address'); return; }
     if (items.length === 0) { toast.error('Your cart is empty'); return; }
 
     setSubmitting(true);
@@ -88,9 +90,10 @@ export default function CheckoutPage() {
           quantity: i.quantity,
           image: i.image,
         })),
-        shippingAddress: { street: address || 'Local Address', city: 'Local', country: 'Egypt' },
+        shippingAddress: { street: address, city: 'Local', country: 'Egypt' },
         paymentMethod: 'whatsapp',
         couponCode: couponApplied?.code,
+        notes: notes,
       });
 
       const responsePayload = data.data || data;
@@ -162,28 +165,12 @@ export default function CheckoutPage() {
             Click the button below to send your order invoice directly to our sales agent on WhatsApp to confirm delivery!
           </p>
 
-          <a
-            href={orderResult.whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn"
-            style={{
-              width: '100%',
-              justifyContent: 'center',
-              background: '#25D366',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '1rem',
-              padding: '0.875rem',
-              borderRadius: 'var(--radius-md)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            <MessageSquare size={20} />
-            Confirm Order on WhatsApp
-          </a>
+          <div className="mt-2">
+            <LuxuryWhatsAppButton 
+              text="Confirm Order on WhatsApp" 
+              onClick={() => window.open(orderResult.whatsappUrl, '_blank', 'noopener,noreferrer')} 
+            />
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -242,7 +229,7 @@ export default function CheckoutPage() {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '0.4rem', fontWeight: 500 }}>
-                Delivery Address <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>(Optional)</span>
+                Delivery Address <span style={{ color: 'red' }}>*</span>
               </label>
               <textarea
                 className="input"
@@ -250,6 +237,20 @@ export default function CheckoutPage() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="City, Street, Apartment / Landmark"
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '0.4rem', fontWeight: 500 }}>
+                Notes <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>(Optional)</span>
+              </label>
+              <textarea
+                className="input"
+                style={{ minHeight: '60px', resize: 'vertical' }}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any special requests or delivery instructions?"
               />
             </div>
 

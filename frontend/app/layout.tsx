@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import CartDrawer from '@/components/CartDrawer';
-import MobileBottomNav from '@/components/mobile/MobileBottomNav';
-import WhatsappFloat from '@/components/mobile/WhatsappFloat';
+import GlobalUIWrapper from '@/components/GlobalUIWrapper';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from 'react-hot-toast';
 
@@ -59,25 +55,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
 
-          {/* Navbar — desktop and mobile header */}
-          <Navbar />
-
-          {/* Cart Drawer — always mounted, slides in/out */}
-          <CartDrawer />
-
-          {/* Main content — mobile safe-area bottom padding */}
-          <main className="pt-0 md:pt-[72px] pb-[84px] md:pb-0" style={{ minHeight: '100vh' }}>
+          {/* Global Storefront UI & Main Content wrapper */}
+          <GlobalUIWrapper>
             {children}
-          </main>
-
-          {/* Floating WhatsApp Conversion Button */}
-          <WhatsappFloat />
-
-          {/* Fixed Mobile Bottom Navigation Tab Bar */}
-          <MobileBottomNav />
-
-          {/* Footer */}
-          <Footer />
+          </GlobalUIWrapper>
         </ThemeProvider>
       </body>
     </html>

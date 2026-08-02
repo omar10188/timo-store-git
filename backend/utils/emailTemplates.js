@@ -1,49 +1,21 @@
 /**
  * Email Templates
- * HTML templates used by the email service
+ * Premium "Apple-style" templates for Timo Store
  */
 
-/**
- * Welcome email template sent to new users
- */
-const welcomeEmailTemplate = (userName) => `
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8" /><title>Welcome to Timo Store</title></head>
-<body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:600px;margin:40px auto;background:#111;border:1px solid #1e1e1e;border-radius:16px;overflow:hidden;">
-    <div style="background:linear-gradient(135deg,#1a1400,#2d2200);border-bottom:1px solid #D4AF37;padding:32px;text-align:center;">
-      <h1 style="margin:0;color:#D4AF37;font-size:28px;font-weight:800;">Welcome to Timo Store 🎉</h1>
-    </div>
-    <div style="padding:32px;">
-      <p style="color:#e5e5e5;font-size:16px;">Hi <strong style="color:#D4AF37;">${userName}</strong>,</p>
-      <p style="color:#9ca3af;">Thank you for joining Timo Store! We're thrilled to have you with us.</p>
-      <p style="color:#9ca3af;">As a welcome gift, enjoy <strong style="color:#D4AF37;">15% off</strong> your first order.</p>
-      <div style="text-align:center;margin:32px 0;">
-        <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/products"
-           style="display:inline-block;background:linear-gradient(135deg,#D4AF37,#F0D060);color:#0a0a0a;text-decoration:none;font-weight:700;padding:14px 32px;border-radius:8px;">
-          Start Shopping →
-        </a>
-      </div>
-    </div>
-    <div style="padding:16px 32px;background:#0d0d0d;border-top:1px solid #1e1e1e;text-align:center;">
-      <p style="margin:0;color:#4b5563;font-size:12px;">Timo Store — Premium Quality Products</p>
-    </div>
-  </div>
-</body>
-</html>`;
+const getYear = () => new Date().getFullYear();
 
 /**
- * Order confirmation template sent to customer after placing an order
+ * Premium Order Confirmation Template
  */
 const orderConfirmationTemplate = (userName, order) => {
   const itemsRows = order.items
     .map(
       (item) => `
       <tr>
-        <td style="padding:10px 12px;border-bottom:1px solid #2a2a2a;color:#e5e5e5;">${item.name}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #2a2a2a;color:#9ca3af;text-align:center;">${item.quantity}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #2a2a2a;color:#D4AF37;text-align:right;">$${(item.price * item.quantity).toFixed(2)}</td>
+        <td style="padding:16px 0;border-bottom:1px solid #eaeaea;color:#1d1d1f;font-weight:500;">${item.name}</td>
+        <td style="padding:16px 0;border-bottom:1px solid #eaeaea;color:#86868b;text-align:center;">x${item.quantity}</td>
+        <td style="padding:16px 0;border-bottom:1px solid #eaeaea;color:#1d1d1f;text-align:right;">$${(item.price * item.quantity).toFixed(2)}</td>
       </tr>`
     )
     .join("");
@@ -51,31 +23,35 @@ const orderConfirmationTemplate = (userName, order) => {
   return `
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8" /><title>Order Confirmed — Timo Store</title></head>
-<body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:600px;margin:40px auto;background:#111;border:1px solid #1e1e1e;border-radius:16px;overflow:hidden;">
-    <div style="background:linear-gradient(135deg,#1a1400,#2d2200);border-bottom:1px solid #D4AF37;padding:32px;">
-      <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;">Order Confirmed ✅</h1>
-      <p style="margin:8px 0 0;color:#9ca3af;">Order #${String(order._id).slice(-8).toUpperCase()}</p>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Confirmed — Timo Store</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f5f7;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.04);">
+    <div style="padding:40px;text-align:center;background:#fbfbfd;border-bottom:1px solid #f5f5f7;">
+      <h1 style="margin:0;color:#1d1d1f;font-size:28px;font-weight:600;letter-spacing:-0.5px;">Timo Store</h1>
+      <h2 style="margin:12px 0 0;color:#1d1d1f;font-size:22px;font-weight:600;">🧾 Order Confirmation</h2>
     </div>
-    <div style="padding:32px;">
-      <p style="color:#e5e5e5;">Hi <strong style="color:#D4AF37;">${userName}</strong>, your order has been placed successfully!</p>
-      <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-        <thead>
-          <tr style="background:#1a1a1a;">
-            <th style="padding:10px 12px;text-align:left;color:#6b7280;font-size:12px;text-transform:uppercase;">Product</th>
-            <th style="padding:10px 12px;text-align:center;color:#6b7280;font-size:12px;text-transform:uppercase;">Qty</th>
-            <th style="padding:10px 12px;text-align:right;color:#6b7280;font-size:12px;text-transform:uppercase;">Total</th>
-          </tr>
-        </thead>
+    <div style="padding:40px;">
+      <p style="color:#1d1d1f;font-size:16px;line-height:1.5;">Hello <strong>${userName}</strong>,</p>
+      <p style="color:#515154;font-size:16px;line-height:1.5;">Thank you for shopping with Timo Store. Your order has been received and is being processed.</p>
+      
+      <h3 style="margin:32px 0 16px;color:#1d1d1f;font-size:14px;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #1d1d1f;padding-bottom:8px;">Order Details</h3>
+      <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
         <tbody>${itemsRows}</tbody>
       </table>
-      <div style="text-align:right;padding-top:12px;border-top:1px solid #2a2a2a;">
-        <span style="color:#D4AF37;font-weight:800;font-size:20px;">Total: $${order.totalPrice.toFixed(2)}</span>
+      
+      <div style="text-align:right;padding-top:16px;">
+        <span style="color:#86868b;font-size:16px;margin-right:12px;">Total</span>
+        <span style="color:#1d1d1f;font-weight:600;font-size:24px;">$${order.totalPrice.toFixed(2)}</span>
       </div>
+      
+      <p style="margin-top:40px;color:#515154;font-size:15px;text-align:center;">We’ll notify you when your order ships 🚚</p>
     </div>
-    <div style="padding:16px 32px;background:#0d0d0d;border-top:1px solid #1e1e1e;text-align:center;">
-      <p style="margin:0;color:#4b5563;font-size:12px;">Thank you for shopping at Timo Store!</p>
+    <div style="padding:24px 40px;background:#fbfbfd;border-top:1px solid #f5f5f7;text-align:center;">
+      <p style="margin:0;color:#86868b;font-size:12px;">© ${getYear()} Timo Store. All rights reserved.</p>
     </div>
   </div>
 </body>
@@ -83,36 +59,49 @@ const orderConfirmationTemplate = (userName, order) => {
 };
 
 /**
- * Abandoned cart email template
+ * Premium Order Status Update Template
  */
-const abandonedCartTemplate = (userName, cart) => `
+const orderStatusUpdateTemplate = (userName, order, status) => {
+  let statusMessage = "Your order status has been updated.";
+  
+  if (status === "shipped") {
+    statusMessage = "Your order is on the way 🚚";
+  } else if (status === "delivered") {
+    statusMessage = "Your order has been delivered ✅";
+  } else if (status === "pending") {
+    statusMessage = "Your order is currently pending and awaiting processing.";
+  }
+
+  return `
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8" /><title>Your Cart is Waiting — Timo Store</title></head>
-<body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:600px;margin:40px auto;background:#111;border:1px solid #1e1e1e;border-radius:16px;overflow:hidden;">
-    <div style="background:linear-gradient(135deg,#1a1400,#2d2200);border-bottom:1px solid #D4AF37;padding:32px;">
-      <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;">You left something behind 🛒</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Update — Timo Store</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f5f7;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.04);">
+    <div style="padding:40px;text-align:center;background:#fbfbfd;border-bottom:1px solid #f5f5f7;">
+      <h1 style="margin:0;color:#1d1d1f;font-size:28px;font-weight:600;letter-spacing:-0.5px;">Timo Store</h1>
+      <h2 style="margin:12px 0 0;color:#1d1d1f;font-size:22px;font-weight:600;">📦 Order Update</h2>
     </div>
-    <div style="padding:32px;">
-      <p style="color:#e5e5e5;">Hi <strong style="color:#D4AF37;">${userName}</strong>,</p>
-      <p style="color:#9ca3af;">Your cart is still waiting for you. Don't miss out on your selected items!</p>
-      <div style="text-align:center;margin:32px 0;">
-        <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/cart"
-           style="display:inline-block;background:linear-gradient(135deg,#D4AF37,#F0D060);color:#0a0a0a;text-decoration:none;font-weight:700;padding:14px 32px;border-radius:8px;">
-          Return to Cart →
-        </a>
+    <div style="padding:40px;text-align:center;">
+      <p style="color:#1d1d1f;font-size:18px;line-height:1.5;">Hi <strong>${userName}</strong>,</p>
+      <div style="margin:32px 0;padding:24px;background:#f5f5f7;border-radius:12px;">
+        <p style="margin:0;color:#1d1d1f;font-size:20px;font-weight:500;">${statusMessage}</p>
       </div>
+      <p style="color:#86868b;font-size:15px;">Order #${String(order._id).slice(-8).toUpperCase()}</p>
     </div>
-    <div style="padding:16px 32px;background:#0d0d0d;border-top:1px solid #1e1e1e;text-align:center;">
-      <p style="margin:0;color:#4b5563;font-size:12px;">Timo Store — Premium Quality Products</p>
+    <div style="padding:24px 40px;background:#fbfbfd;border-top:1px solid #f5f5f7;text-align:center;">
+      <p style="margin:0;color:#86868b;font-size:12px;">© ${getYear()} Timo Store. All rights reserved.</p>
     </div>
   </div>
 </body>
 </html>`;
+};
 
 module.exports = {
-  welcomeEmailTemplate,
   orderConfirmationTemplate,
-  abandonedCartTemplate,
+  orderStatusUpdateTemplate
 };

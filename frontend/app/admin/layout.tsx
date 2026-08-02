@@ -15,7 +15,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     >
       <AdminSidebar />
       <main
-        className="flex-1 p-8 overflow-y-auto"
+        className="flex-1 p-8 pt-12 md:pt-16 overflow-y-auto"
         style={{ background: "var(--color-bg)" }}
       >
         {children}

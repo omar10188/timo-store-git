@@ -32,12 +32,12 @@ const productSchema = new mongoose.Schema(
       min: [0, "Discount cannot be less than 0"], 
       max: [100, "Discount cannot exceed 100%"] 
     },
-    category: {
+    categories: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      required: [true, "Product must belong to a category"],
+      required: [true, "Product must belong to at least one category"],
       index: true
-    },
+    }],
     brand: { 
       type: String, 
       required: [true, "Brand is required"], 

@@ -6,38 +6,7 @@ const { protect, authorize } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// Ensure directory exists
-const uploadDir = path.join(__dirname, "..", "uploads", "products");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer Config
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, `product-${uniqueSuffix}${path.extname(file.originalname)}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: function (req, file, cb) {
-    const filetypes = /jpeg|jpg|png|webp/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
-
-    if (extname && mimetype) {
-      return cb(null, true);
-    } else {
-      cb(new Error("Images only! (jpeg, jpg, png, webp)"));
-    }
-  },
-});
+const upload = require("../middleware/uploadMiddleware");
 
 // @desc    Upload product image
 // @route   POST /api/upload/product
@@ -48,7 +17,11 @@ router.post("/product", protect, authorize("admin"), upload.single("image"), (re
   }
 
   // The URL to save in the database
-  const imageUrl = `/uploads/products/${req.file.filename}`;
+  // Cloudinary returns req.file.path as the cloud URL
+  // Local storage returns req.file.filename, so we prepend the local path
+  const imageUrl = req.file.path && req.file.path.startsWith('http') 
+    ? req.file.path 
+    : `/uploads/products/${req.file.filename}`;
   
   res.status(201).json({
     message: "Image uploaded successfully",

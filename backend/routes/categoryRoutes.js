@@ -11,13 +11,7 @@ const {
   deleteCategory,
 } = require("../controllers/categoryController");
 
-// Multer config for category images
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, "../uploads")),
-  filename: (req, file, cb) =>
-    cb(null, `cat-${Date.now()}${path.extname(file.originalname)}`),
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = require("../middleware/uploadMiddleware");
 
 router.get("/", getCategories);
 router.get("/:id", getCategoryById);

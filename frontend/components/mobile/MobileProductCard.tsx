@@ -2,16 +2,20 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, Heart } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Star, Heart, Pencil, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWishlistStore, useAuthStore } from '@/lib/store';
-import { wishlistAPI } from '@/lib/api';
+import { wishlistAPI, productsAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
+import AdminQuickEditModal from '../AdminQuickEditModal';
 
 export interface Product {
   _id: string;
   name: string;
   price: number;
+  description?: string;
+  category?: string | { _id: string; name: string };
+  categories?: { _id: string; name: string }[];
   salePrice?: number;
   discount?: number;
   image: string;
@@ -28,19 +32,39 @@ interface MobileProductCardProps {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 function getImageUrl(src: string) {
   if (!src) return '/placeholder.png';
-  if (src.startsWith('http')) return src;
-  return `${API_BASE}${src}`;
+  const decoded = src.startsWith('http') ? src : `${API_BASE}${src}`;
+  return encodeURI(decoded);
 }
 
 export default function MobileProductCard({ product }: MobileProductCardProps) {
   const router = useRouter();
   const { productIds, toggleItem } = useWishlistStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
 
   const isWishlisted = productIds.includes(product._id);
   const displayPrice = product.salePrice || product.price;
   const rating = product.rating || 4.5;
-  const brandName = product.brand || product.categoryName || 'LUXURY PARFUM';
+  const brandName = product.categories?.length 
+    ? (product.categories.length > 3 
+        ? product.categories.slice(0, 3).map(c => c.name).join(' • ') + ` • +${product.categories.length - 3}` 
+        : product.categories.map(c => c.name).join(' • '))
+    : (product.brand || product.categoryName || 'LUXURY PARFUM');
+
+  const isAdmin = user?.role === 'admin';
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Are you sure you want to delete this product?')) {
+      try {
+        await productsAPI.delete(product._id);
+        toast.success('Product deleted successfully');
+        window.location.reload(); // Refresh to update list
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to delete product');
+      }
+    }
+  };
 
   const handleWishlist = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -83,19 +107,53 @@ export default function MobileProductCard({ product }: MobileProductCardProps) {
           <span>{rating.toFixed(1)}</span>
         </div>
 
-        {/* Wishlist Button */}
-        <button
-          onClick={handleWishlist}
-          className="flex h-7 w-7 items-center justify-center rounded-full transition-transform active:scale-90"
-          style={{
-            background: isWishlisted ? 'rgba(212, 168, 83, 0.15)' : 'var(--color-bg-elevated)',
-            border: isWishlisted ? '1px solid var(--color-gold)' : '1px solid var(--color-border)',
-            color: isWishlisted ? 'var(--color-gold)' : 'var(--color-text-muted)',
-          }}
-          aria-label="Toggle Wishlist"
-        >
-          <Heart size={13} fill={isWishlisted ? 'var(--color-gold)' : 'none'} />
-        </button>
+        <div className="flex items-center gap-1">
+          {isAdmin && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditModalOpen(true);
+                }}
+                className="flex h-7 w-7 items-center justify-center rounded-full transition-transform active:scale-90"
+                style={{
+                  background: 'var(--color-bg-elevated)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-muted)',
+                }}
+                aria-label="Edit Product"
+              >
+                <Pencil size={13} />
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex h-7 w-7 items-center justify-center rounded-full transition-transform active:scale-90"
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: 'rgb(239, 68, 68)',
+                }}
+                aria-label="Delete Product"
+              >
+                <Trash2 size={13} />
+              </button>
+            </>
+          )}
+
+          {/* Wishlist Button */}
+          <button
+            onClick={handleWishlist}
+            className="flex h-7 w-7 items-center justify-center rounded-full transition-transform active:scale-90"
+            style={{
+              background: isWishlisted ? 'rgba(212, 168, 83, 0.15)' : 'var(--color-bg-elevated)',
+              border: isWishlisted ? '1px solid var(--color-gold)' : '1px solid var(--color-border)',
+              color: isWishlisted ? 'var(--color-gold)' : 'var(--color-text-muted)',
+            }}
+            aria-label="Toggle Wishlist"
+          >
+            <Heart size={13} fill={isWishlisted ? 'var(--color-gold)' : 'none'} />
+          </button>
+        </div>
       </div>
 
       {/* Centered Product Photo */}
@@ -138,6 +196,13 @@ export default function MobileProductCard({ product }: MobileProductCardProps) {
       >
         EGP {displayPrice.toFixed(0)}
       </div>
+
+      <AdminQuickEditModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        product={product} 
+        onUpdateSuccess={() => window.location.reload()} 
+      />
     </motion.div>
   );
 }

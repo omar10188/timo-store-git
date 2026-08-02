@@ -14,21 +14,7 @@ const {
   getRelatedProducts,
 } = require("../controllers/productController");
 
-const uploadDir = path.join(__dirname, "..", "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const upload = multer({ storage });
+const upload = require("../middleware/uploadMiddleware");
 
 router.get("/trending", getTrendingProducts);
 router.get("/", getProducts);

@@ -4,6 +4,7 @@ import { useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, MessageCircle } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
+import LuxuryWhatsAppButton from './ui/LuxuryWhatsAppButton';
 import { cartAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -11,8 +12,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http:/
 
 function getImageUrl(src: string) {
   if (!src) return '';
-  if (src.startsWith('http')) return src;
-  return `${API_BASE}${src}`;
+  const decoded = src.startsWith('http') ? src : `${API_BASE}${src}`;
+  return encodeURI(decoded);
 }
 
 export default function CartDrawer() {
@@ -188,25 +189,9 @@ export default function CartDrawer() {
               Proceed to Checkout <ArrowRight size={16} />
             </Link>
 
-            <button
-              onClick={handleWhatsAppOrder}
-              className="btn"
-              style={{
-                width: '100%',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                marginTop: '0.5rem',
-                background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.88rem',
-                border: 'none',
-                boxShadow: '0 4px 14px rgba(37, 211, 102, 0.25)',
-              }}
-            >
-              <MessageCircle size={16} className="fill-white text-white" />
-              Order via WhatsApp
-            </button>
+            <div className="mt-2">
+              <LuxuryWhatsAppButton onClick={handleWhatsAppOrder} />
+            </div>
 
             <Link
               href="/cart"

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAdminStore } from "@/lib/store/adminStore";
-import { DollarSign, ShoppingBag, Users, Activity } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, Activity, BarChart2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { 
@@ -12,10 +12,11 @@ import {
 
 export default function AdminDashboard() {
   const { stats, fetchStats, isLoading } = useAdminStore();
+  const [range, setRange] = useState("30d");
 
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    fetchStats(range);
+  }, [fetchStats, range]);
 
   if (isLoading || !stats) {
     return (
@@ -31,8 +32,8 @@ export default function AdminDashboard() {
   const statCards = [
     { title: "Total Revenue", value: `$${stats.totalRevenue?.toFixed(2) || '0.00'}`, icon: DollarSign },
     { title: "Total Orders", value: stats.totalOrders || 0, icon: ShoppingBag },
-    { title: "Orders Today", value: stats.ordersToday ?? 0, icon: Activity },
-    { title: "Total Users", value: stats.totalUsers || 0, icon: Users },
+    { title: "Avg Order Value", value: `$${stats.averageOrderValue?.toFixed(2) || '0.00'}`, icon: BarChart2 },
+    { title: "Total Customers", value: stats.totalCustomers || stats.totalUsers || 0, icon: Users },
   ];
 
   // Chart colors adapt to current CSS vars via recharts props
@@ -44,16 +45,30 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8 pb-10">
-      <div>
-        <h1
-          className="text-3xl font-bold mb-2"
-          style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-heading)' }}
-        >
-          Dashboard Overview
-        </h1>
-        <p style={{ color: 'var(--color-text-secondary)' }}>
-          Welcome back, Admin. Here&apos;s what&apos;s happening today.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1
+            className="text-3xl font-bold mb-2"
+            style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-heading)' }}
+          >
+            Dashboard Overview
+          </h1>
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            Welcome back, Admin. Here&apos;s what&apos;s happening.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 bg-[var(--color-bg-card)] border border-[var(--color-border)] px-4 py-2 rounded-xl">
+          <span className="text-sm text-[var(--color-text-secondary)]">Time Range:</span>
+          <select 
+            value={range} 
+            onChange={(e) => setRange(e.target.value)}
+            className="bg-transparent text-[var(--color-text-primary)] font-medium outline-none cursor-pointer"
+          >
+            <option value="7d" className="bg-[var(--color-bg-card)] text-black dark:text-white">Last 7 Days</option>
+            <option value="30d" className="bg-[var(--color-bg-card)] text-black dark:text-white">Last 30 Days</option>
+            <option value="1y" className="bg-[var(--color-bg-card)] text-black dark:text-white">Last Year</option>
+          </select>
+        </div>
       </div>
 
       {/* Metrics Grid */}

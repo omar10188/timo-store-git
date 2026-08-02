@@ -5,8 +5,9 @@ const Coupon = require("../models/Coupon");
 const User = require("../models/User");
 const mongoose = require("mongoose");
 const asyncHandler = require("../utils/asyncHandler");
-const { sendOrderConfirmationEmail } = require("../services/emailService");
+const { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } = require("../services/emailService");
 const { sendAdminOrderNotification } = require("../services/notificationService");
+const { generateInvoice } = require("../services/invoiceService");
 
 // Helper to safely get Socket.io (won't crash if not initialized)
 const emitToAdmin = (event, data) => {
@@ -39,6 +40,12 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
   if (!phone || phone.trim().length < 7) {
     const err = new Error("Valid phone number is required");
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  if (!addressString || addressString.trim().length < 5) {
+    const err = new Error("Delivery address is required");
     err.statusCode = 400;
     return next(err);
   }
@@ -229,6 +236,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
       postalCode: shippingAddress?.postalCode || "",
     },
     paymentMethod: paymentMethod || "whatsapp",
+    notes: req.body.notes || "",
     statusHistory: [{ status: "pending", changedAt: new Date(), note: "Order placed via WhatsApp Checkout" }],
   });
 
@@ -253,31 +261,33 @@ const createOrder = asyncHandler(async (req, res, next) => {
   const dateStr = new Date().toLocaleDateString("en-GB");
 
   const itemsListFormatted = orderItems
-    .map((i) => `• ${i.quantity}x ${i.name} (EGP ${(i.price * i.quantity).toFixed(2)})`)
+    .map((i) => `- ${i.name} × ${i.quantity} = ${i.price * i.quantity} EGP`)
     .join("\n");
 
   const whatsappMessage = 
-`🛍️ *طلب جديد - TIMO STORE*
-----------------------------------
-🆔 *رقم الطلب:* #${orderIdShort}
-👤 *الاسم:* ${name}
-📞 *الهاتف:* ${phone}
-📍 *العنوان:* ${addressString || "غير محدد"}
-----------------------------------
-🛒 *المنتجات:*
+`طلب جديد 🛍️
+الاسم: ${name}
+الموبايل: ${phone}
+العنوان: ${addressString}
+
+الطلبات:
 ${itemsListFormatted}
-----------------------------------
-💵 *الإجمالي:* EGP ${totalPrice.toFixed(2)}
-📅 *التاريخ:* ${dateStr}
-----------------------------------
-شكراً لتسوقكم من TIMO STORE! 🎉`;
+
+الإجمالي: ${totalPrice} EGP${req.body.notes ? `\n\nالملاحظات: ${req.body.notes}` : ""}`;
 
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
   // 8. Notifications & Socket.io
   const customerEmail = user.email && !user.email.includes("@timo.com") ? user.email : null;
   if (customerEmail) {
-    sendOrderConfirmationEmail({ ...user.toObject(), email: customerEmail }, order).catch(() => {});
+    generateInvoice(order)
+      .then((invoicePath) => {
+        sendOrderConfirmationEmail(name, customerEmail, order, invoicePath).catch(() => {});
+      })
+      .catch((err) => {
+        console.error("❌ PDF generation failed:", err.message);
+        sendOrderConfirmationEmail(name, customerEmail, order).catch(() => {}); // Fallback without PDF
+      });
   }
   sendAdminOrderNotification(order, name).catch(() => {});
 
@@ -407,6 +417,12 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
     status: updatedOrder.status,
     previousStatus,
   });
+
+  // Send status update email to customer
+  const customerEmail = order.user?.email || `guest_${order.customerPhone}@timo.com`;
+  if (!customerEmail.includes("guest_")) {
+    sendOrderStatusUpdateEmail(order.customerName, customerEmail, updatedOrder, status).catch(() => {});
+  }
 
   res.json(updatedOrder);
 });

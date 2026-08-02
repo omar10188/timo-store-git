@@ -1,7 +1,9 @@
 const User = require("../models/User");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
+const EmailSettings = require("../models/EmailSettings");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
+const { clearSettingsCache } = require("../services/emailService");
 
 /**
  * GET /api/admin/stats
@@ -29,7 +31,7 @@ const getDashboardStats = async (req, res, next) => {
       Order.countDocuments(),
       // Total revenue from paid orders
       Order.aggregate([
-        { $match: { paymentStatus: "paid" } },
+        { $match: { status: { $ne: "cancelled" } } },
         { $group: { _id: null, total: { $sum: "$totalPrice" } } },
       ]),
       // Last 5 orders
@@ -43,7 +45,7 @@ const getDashboardStats = async (req, res, next) => {
         .limit(10),
       // Sales data (Daily revenue for charts — last 30 days)
       Order.aggregate([
-        { $match: { paymentStatus: "paid" } },
+        { $match: { status: { $ne: "cancelled" } } },
         {
           $group: {
             _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
@@ -55,7 +57,7 @@ const getDashboardStats = async (req, res, next) => {
       ]),
       // Top products (By quantity sold)
       Order.aggregate([
-        { $match: { paymentStatus: "paid" } },
+        { $match: { status: { $ne: "cancelled" } } },
         { $unwind: "$items" },
         {
           $group: {
@@ -262,6 +264,50 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/admin/email-settings
+ * Get email settings (singleton)
+ */
+const getEmailSettings = async (req, res, next) => {
+  try {
+    let settings = await EmailSettings.findOne();
+    if (!settings) {
+      settings = await EmailSettings.create({});
+    }
+    res.json(settings);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PUT /api/admin/email-settings
+ * Update email settings
+ */
+const updateEmailSettings = async (req, res, next) => {
+  try {
+    const { enabled, orderConfirmation, statusUpdates } = req.body;
+    
+    let settings = await EmailSettings.findOne();
+    if (!settings) {
+      settings = new EmailSettings();
+    }
+
+    if (enabled !== undefined) settings.enabled = enabled;
+    if (orderConfirmation !== undefined) settings.orderConfirmation = orderConfirmation;
+    if (statusUpdates !== undefined) settings.statusUpdates = statusUpdates;
+
+    await settings.save();
+    
+    // Invalidate the memory cache so the next email uses the fresh settings immediately
+    clearSettingsCache();
+    
+    res.json(settings);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getAdminOrders,
@@ -269,4 +315,6 @@ module.exports = {
   getAllUsers,
   updateUserRole,
   deleteUser,
+  getEmailSettings,
+  updateEmailSettings,
 };

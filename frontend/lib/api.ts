@@ -225,6 +225,19 @@ export const adminAPI = {
     api.patch(`/admin/orders/${id}`, { status, note }),
 };
 
+// ─── Analytics API ────────────────────────────────────────────────────────────
+export const analyticsAPI = {
+  getSummary: (range: string = '30d') => api.get(`/admin/analytics/summary?range=${range}`),
+  getSales: (range: string = '30d') => api.get(`/admin/analytics/sales?range=${range}`),
+  getTopProducts: (range: string = '30d') => api.get(`/admin/analytics/top-products?range=${range}`),
+};
+
+// ─── Settings API ─────────────────────────────────────────────────────────────
+export const settingsAPI = {
+  getEmailSettings: () => api.get('/admin/email-settings'),
+  updateEmailSettings: (data: object) => api.put('/admin/email-settings', data),
+};
+
 // ─── Upload & Images API ──────────────────────────────────────────────────────
 export const uploadAPI = {
   uploadProductImage: (data: FormData) => 

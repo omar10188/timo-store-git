@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { adminAPI, productsAPI, couponsAPI } from '../api';
+import { adminAPI, productsAPI, couponsAPI, analyticsAPI } from '../api';
 
 interface StatusHistoryEntry {
   status: string;
@@ -48,7 +48,7 @@ interface AdminState {
   totalPages: number;
   totalOrders: number;
   // Actions
-  fetchStats: () => Promise<void>;
+  fetchStats: (range?: string) => Promise<void>;
   fetchOrders: (params?: { search?: string; status?: string; page?: number }) => Promise<void>;
   fetchOrderById: (id: string) => Promise<void>;
   fetchProducts: () => Promise<void>;
@@ -81,11 +81,26 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   totalPages: 1,
   totalOrders: 0,
 
-  fetchStats: async () => {
+  fetchStats: async (range: string = '30d') => {
     set({ isLoading: true, error: null });
     try {
-      const { data } = await adminAPI.getStats();
-      set({ stats: data, isLoading: false });
+      // Also fetch the old admin stats just to keep recentOrders, lowStockProducts, totalUsers etc.
+      // But we will override the charts and summary with the new analytics
+      const [oldStatsRes, summaryRes, salesRes, topProductsRes] = await Promise.all([
+        adminAPI.getStats(),
+        analyticsAPI.getSummary(range),
+        analyticsAPI.getSales(range),
+        analyticsAPI.getTopProducts(range)
+      ]);
+
+      const mergedStats = {
+        ...oldStatsRes.data,
+        ...summaryRes.data,
+        salesData: salesRes.data,
+        topProducts: topProductsRes.data,
+      };
+
+      set({ stats: mergedStats, isLoading: false });
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
     }

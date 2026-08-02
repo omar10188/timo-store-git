@@ -10,6 +10,7 @@ router.use("/wishlist", require("./wishlistRoutes"));
 router.use("/coupons", require("./couponRoutes"));
 router.use("/reviews", require("./reviewRoutes"));
 router.use("/admin", require("./adminRoutes"));
+router.use("/admin/analytics", require("./analyticsRoutes"));
 router.use("/payments", require("./paymentRoutes"));
 router.use("/upload", require("./uploadRoutes"));
 router.use("/images", require("./imageRoutes"));

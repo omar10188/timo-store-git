@@ -5,24 +5,30 @@ const asyncHandler = require("../utils/asyncHandler");
 // @route   POST /api/products
 // @access  Private/Admin
 const createProduct = asyncHandler(async (req, res, next) => {
-  const { name, description, price, category, brand, stock, isFeatured } = req.body;
+  let inputCategories = req.body.categories || req.body["categories[]"];
+  if (typeof inputCategories === "string" && inputCategories.startsWith("[")) {
+    try {
+      inputCategories = JSON.parse(inputCategories);
+    } catch (e) {
+      // Ignore parse error, let it be handled as a string
+    }
+  }
+  
+  const { name, description, price, brand, stock, isFeatured } = req.body;
 
-  const requiredFields = ["name", "description", "price", "category", "brand"];
-  const missingFields = requiredFields.filter(field => !req.body[field]);
-
-  if (missingFields.length > 0) {
+  if (!name || !description || !price || !inputCategories || !brand) {
+    const missingFields = ["name", "description", "price", "categories", "brand"].filter(field => !req.body[field] && !(field === 'categories' && inputCategories));
     return res.status(400).json({
       message: `Missing required fields: ${missingFields.join(", ")}`,
       missing: missingFields
     });
   }
 
-  let uploadedImages = req.files && req.files.length > 0 
-    ? req.files.map((file) => `/uploads/products/${file.filename}`) // Update to products subfolder if uploaded directly here, but keeping old logic works too. Actually wait, productRoutes uses standard /uploads/. We'll just leave this as is for standard uploads.
-    : [];
-  
+  let uploadedImages = [];
   if (req.files && req.files.length > 0) {
-    uploadedImages = req.files.map((file) => `/uploads/${file.filename}`);
+    uploadedImages = req.files.map((file) => 
+      file.path && file.path.startsWith('http') ? file.path : `/uploads/products/${file.filename}`
+    );
   }
 
   const existingImage = req.body.image || "";
@@ -33,7 +39,7 @@ const createProduct = asyncHandler(async (req, res, next) => {
     name,
     description,
     price: Number(price),
-    category,
+    categories: Array.isArray(inputCategories) ? inputCategories : [inputCategories],
     brand,
     stock: Number(stock || 0),
     isFeatured: isFeatured === "true" || isFeatured === true,
@@ -66,7 +72,7 @@ const getProducts = asyncHandler(async (req, res, next) => {
   }
 
   if (category) {
-    query.category = category;
+    query.categories = category;
   }
 
   if (isFeatured !== undefined) {
@@ -95,7 +101,7 @@ const getProducts = asyncHandler(async (req, res, next) => {
 
   const total = await Product.countDocuments(query);
   const products = await Product.find(query)
-    .populate("category", "name slug")
+    .populate("categories", "name slug")
     .sort(sortOptions)
     .skip((page - 1) * limit)
     .limit(limit);
@@ -118,7 +124,7 @@ const getProductById = asyncHandler(async (req, res, next) => {
     return next(error);
   }
 
-  const product = await Product.findById(req.params.id).populate("category", "name slug");
+  const product = await Product.findById(req.params.id).populate("categories", "name slug");
 
   if (!product) {
     const error = new Error("Product not found");
@@ -143,7 +149,9 @@ const updateProduct = asyncHandler(async (req, res, next) => {
 
   let uploadedImages = [];
   if (req.files && req.files.length > 0) {
-    uploadedImages = req.files.map((file) => `/uploads/${file.filename}`);
+    uploadedImages = req.files.map((file) => 
+      file.path && file.path.startsWith('http') ? file.path : `/uploads/products/${file.filename}`
+    );
   }
 
   const existingImage = req.body.image || "";
@@ -159,12 +167,29 @@ const updateProduct = asyncHandler(async (req, res, next) => {
     ? uploadedImages 
     : (existingImage ? [existingImage] : product.images);
 
-  const { name, description, price, category, brand, stock, isFeatured } = req.body;
+  let inputCategories = req.body.categories || req.body["categories[]"];
+  if (typeof inputCategories === "string" && inputCategories.startsWith("[")) {
+    try {
+      inputCategories = JSON.parse(inputCategories);
+    } catch (e) {
+      // Ignore parse error
+    }
+  }
+  
+  const { name, description, price, discount, brand, stock, isFeatured } = req.body;
 
   product.name = name || product.name;
   product.description = description || product.description;
   product.price = price ? Number(price) : product.price;
-  product.category = category || product.category;
+  
+  if (discount !== undefined) {
+    product.discount = Number(discount);
+  }
+  
+  if (inputCategories) {
+    product.categories = Array.isArray(inputCategories) ? inputCategories : [inputCategories];
+  }
+  
   product.brand = brand || product.brand;
   product.stock = stock ? Number(stock) : product.stock;
   
@@ -200,11 +225,11 @@ const deleteProduct = asyncHandler(async (req, res, next) => {
 // @access  Public
 const getTrendingProducts = asyncHandler(async (req, res, next) => {
   // Simple algorithm: highest rating + most reviews (or just a mix)
-  // To keep it fast, we'll sort by rating desc, numReviews desc and limit to 8
+  // To keep it fast, we'll sort by ratingsAverage desc, ratingsQuantity desc and limit to 8
   const products = await Product.find({})
-    .sort({ rating: -1, numReviews: -1 })
+    .sort({ ratingsAverage: -1, ratingsQuantity: -1 })
     .limit(8)
-    .populate("category", "name slug")
+    .populate("categories", "name slug")
     .lean();
 
   res.json(products);
@@ -228,18 +253,17 @@ const getRelatedProducts = asyncHandler(async (req, res, next) => {
     return next(error);
   }
 
-  const categoryId = product.category?._id || product.category;
-  const isCategoryValid = mongoose.Types.ObjectId.isValid(categoryId);
+  const categoryIds = product.categories || [];
 
   // Find products in the same category, excluding the current one
   let relatedProducts = [];
-  if (isCategoryValid) {
+  if (categoryIds.length > 0) {
     relatedProducts = await Product.find({
-      category: categoryId,
+      categories: { $in: categoryIds },
       _id: { $ne: product._id },
     })
       .limit(4)
-      .populate("category", "name slug")
+      .populate("categories", "name slug")
       .lean();
   }
 
@@ -249,9 +273,9 @@ const getRelatedProducts = asyncHandler(async (req, res, next) => {
     const topRated = await Product.find({
       _id: { $nin: excludeIds },
     })
-      .sort({ rating: -1 })
+      .sort({ ratingsAverage: -1 })
       .limit(4 - relatedProducts.length)
-      .populate("category", "name slug")
+      .populate("categories", "name slug")
       .lean();
     
     relatedProducts = [...relatedProducts, ...topRated];

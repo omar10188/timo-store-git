@@ -8,6 +8,8 @@ const {
   getAllUsers,
   updateUserRole,
   deleteUser,
+  getEmailSettings,
+  updateEmailSettings,
 } = require("../controllers/adminController");
 const { updateOrderStatus } = require("../controllers/orderController");
 
@@ -41,5 +43,9 @@ const updateRoleSchema = z.object({
 router.get("/users", getAllUsers);
 router.put("/users/:id/role", validate(updateRoleSchema), updateUserRole);
 router.delete("/users/:id", deleteUser);
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+router.get("/email-settings", getEmailSettings);
+router.put("/email-settings", updateEmailSettings);
 
 module.exports = router;

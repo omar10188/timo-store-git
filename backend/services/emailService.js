@@ -1,82 +1,112 @@
-const { Resend } = require('resend');
-const logger = require('../utils/logger');
-const {
-  welcomeEmailTemplate,
-  orderConfirmationTemplate,
-  abandonedCartTemplate
-} = require('../utils/emailTemplates');
+const resend = require("../config/resend");
+const { orderConfirmationTemplate, orderStatusUpdateTemplate } = require("../utils/emailTemplates");
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
-const FROM_EMAIL = 'Timo Store <onboarding@resend.dev>'; // Resend testing email
+const FROM_EMAIL = process.env.EMAIL_FROM || "onboarding@resend.dev";
+const fs = require("fs");
+const EmailSettings = require("../models/EmailSettings");
+
+let cachedSettings = null;
+let lastCacheTime = null;
+const CACHE_TTL = 60 * 1000; // 60 seconds
+
+const clearSettingsCache = () => {
+  cachedSettings = null;
+  lastCacheTime = null;
+};
 
 /**
- * Send Welcome Email
+ * Helper to fetch settings safely with 60-second in-memory cache
  */
-const sendWelcomeEmail = async (user) => {
+const getSettings = async () => {
+  const now = Date.now();
+  if (cachedSettings && lastCacheTime && now - lastCacheTime < CACHE_TTL) {
+    return cachedSettings;
+  }
+
   try {
-    if (!process.env.RESEND_API_KEY) {
-      logger.warn('RESEND_API_KEY not found. Skipping Welcome Email.');
-      return;
+    let settings = await EmailSettings.findOne();
+    if (!settings) {
+      settings = await EmailSettings.create({});
     }
     
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: user.email,
-      subject: 'Welcome to Timo Store - Exclusive 15% Off Inside',
-      html: welcomeEmailTemplate(user.name),
-    });
-    logger.info(`Welcome email sent to ${user.email}`);
+    cachedSettings = settings;
+    lastCacheTime = now;
+    
+    return settings;
   } catch (error) {
-    logger.error(`Failed to send welcome email to ${user.email}: ${error.message}`);
+    console.error("⚠️ DB Error - Failed to fetch EmailSettings, defaulting to disabled:", error);
+    return { enabled: false, orderConfirmation: false, statusUpdates: false };
   }
 };
 
 /**
- * Send Order Confirmation Email
+ * Send order confirmation to customer
  */
-const sendOrderConfirmationEmail = async (user, order) => {
+const sendOrderConfirmationEmail = async (customerName, customerEmail, order, invoicePath = null) => {
+  if (!customerEmail) return;
+
+  const settings = await getSettings();
+  if (!settings.enabled || !settings.orderConfirmation) {
+    console.log("Email skipped بسبب settings (Order Confirmation)");
+    return;
+  }
+
   try {
-    if (!process.env.RESEND_API_KEY) {
-      logger.warn('RESEND_API_KEY not found. Skipping Order Confirmation Email.');
-      return;
+    const payload = {
+      from: `Timo Store <${FROM_EMAIL}>`,
+      to: customerEmail,
+      subject: `Order Confirmed #${String(order._id).slice(-8).toUpperCase()} - TIMO STORE`,
+      html: orderConfirmationTemplate(customerName, order),
+    };
+
+    if (invoicePath && fs.existsSync(invoicePath)) {
+      const invoiceBuffer = fs.readFileSync(invoicePath);
+      payload.attachments = [
+        {
+          filename: `Invoice_${String(order._id).slice(-8).toUpperCase()}.pdf`,
+          content: invoiceBuffer,
+        },
+      ];
     }
 
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: user.email,
-      subject: `Order Confirmation #${order._id}`,
-      html: orderConfirmationTemplate(user.name, order),
-    });
-    logger.info(`Order confirmation email sent to ${user.email} for order ${order._id}`);
+    const data = await resend.emails.send(payload);
+    console.log(`✅ Confirmation email sent to ${customerEmail}`);
+    return data;
   } catch (error) {
-    logger.error(`Failed to send order confirmation to ${user.email}: ${error.message}`);
+    console.error(`❌ Failed to send confirmation email to ${customerEmail}:`, error.message);
+    // Silent fail to not break the order flow
   }
 };
 
 /**
- * Send Abandoned Cart Email
+ * Send order status update to customer
  */
-const sendAbandonedCartEmail = async (user, cart) => {
-  try {
-    if (!process.env.RESEND_API_KEY) {
-      logger.warn('RESEND_API_KEY not found. Skipping Abandoned Cart Email.');
-      return;
-    }
+const sendOrderStatusUpdateEmail = async (customerName, customerEmail, order, status) => {
+  if (!customerEmail) return;
 
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: user.email,
-      subject: 'You left something behind in your cart...',
-      html: abandonedCartTemplate(user.name, cart),
+  const settings = await getSettings();
+  if (!settings.enabled || !settings.statusUpdates) {
+    console.log("Email skipped بسبب settings (Status Updates)");
+    return;
+  }
+
+  try {
+    const data = await resend.emails.send({
+      from: `Timo Store <${FROM_EMAIL}>`,
+      to: customerEmail,
+      subject: `Order Status Update: ${status.toUpperCase()} - TIMO STORE`,
+      html: orderStatusUpdateTemplate(customerName, order, status),
     });
-    logger.info(`Abandoned cart email sent to ${user.email}`);
+    console.log(`✅ Status update email sent to ${customerEmail}`);
+    return data;
   } catch (error) {
-    logger.error(`Failed to send abandoned cart email to ${user.email}: ${error.message}`);
+    console.error(`❌ Failed to send status update email to ${customerEmail}:`, error.message);
+    // Silent fail
   }
 };
 
 module.exports = {
-  sendWelcomeEmail,
   sendOrderConfirmationEmail,
-  sendAbandonedCartEmail,
+  sendOrderStatusUpdateEmail,
+  clearSettingsCache,
 };

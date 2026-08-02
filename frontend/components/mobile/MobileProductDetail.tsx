@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Share2, Heart, Star, Sparkles,
-  Flame, Trees, Citrus as CitrusIcon, Sun, Droplets
+  Flame, Trees, Citrus as CitrusIcon, Sun, Droplets,
+  Pencil, Trash2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCartStore, useWishlistStore, useAuthStore } from '@/lib/store';
-import { wishlistAPI } from '@/lib/api';
+import { wishlistAPI, productsAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
+import AdminQuickEditModal from '../AdminQuickEditModal';
 
 export interface ProductDetailProps {
   product: {
@@ -30,9 +32,9 @@ export interface ProductDetailProps {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 function getImageUrl(src: string) {
-  if (!src) return '/placeholder.png';
-  if (src.startsWith('http')) return src;
-  return `${API_BASE}${src}`;
+  if (!src) return '';
+  const decoded = src.startsWith('http') ? src : `${API_BASE}${src}`;
+  return encodeURI(decoded);
 }
 
 const BASE_NOTES = [
@@ -50,7 +52,10 @@ export default function MobileProductDetail({ product }: ProductDetailProps) {
 
   const { addToCartAsync } = useCartStore();
   const { productIds, toggleItem } = useWishlistStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const isAdmin = user?.role === 'admin';
 
   const isWishlisted = productIds.includes(product._id);
   const displayPrice = product.salePrice || product.price;
@@ -111,6 +116,18 @@ export default function MobileProductDetail({ product }: ProductDetailProps) {
     }
   };
 
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this product?')) {
+      try {
+        await productsAPI.delete(product._id);
+        toast.success('Product deleted successfully');
+        router.push('/'); // Or /products
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to delete product');
+      }
+    }
+  };
+
   return (
     <div className="md:hidden flex flex-col min-h-screen pb-36 bg-[var(--color-bg)]">
       {/* Mobile Top Header */}
@@ -150,6 +167,24 @@ export default function MobileProductDetail({ product }: ProductDetailProps) {
           >
             <Share2 size={16} />
           </button>
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[var(--color-text-muted)]"
+                aria-label="Edit"
+              >
+                <Pencil size={16} />
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] text-red-500"
+                aria-label="Delete"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -294,6 +329,13 @@ export default function MobileProductDetail({ product }: ProductDetailProps) {
           EGP {finalPrice.toFixed(0)}
         </div>
       </div>
+
+      <AdminQuickEditModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        product={product} 
+        onUpdateSuccess={() => window.location.reload()} 
+      />
     </div>
   );
 }

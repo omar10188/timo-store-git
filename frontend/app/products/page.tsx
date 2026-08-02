@@ -68,7 +68,7 @@ function ProductsContent() {
   return (
     <div className="container" style={{ padding: '2.5rem var(--container-padding)', minHeight: '80vh' }}>
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
+      <div style={{ marginTop: '2rem', marginBottom: '2rem' }}>
         <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', marginBottom: '0.5rem' }}>
           Shop All Fragrances
         </h1>
@@ -77,45 +77,39 @@ function ProductsContent() {
         </p>
       </div>
 
-      {/* Category Pills Bar (Horizontal Scrollable) */}
-      <div
-        className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        <button
-          onClick={() => { setCategory(''); setPage(1); }}
-          className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider shrink-0 transition-all duration-200"
-          style={{
-            background: category === '' ? 'var(--color-accent, #ffffff)' : 'var(--color-bg-elevated)',
-            color: category === '' ? '#0f0f0f' : 'var(--color-text-secondary)',
-            border: `1px solid ${category === '' ? '#ffffff' : 'var(--color-border)'}`,
-            boxShadow: category === '' ? '0 4px 12px rgba(255,255,255,0.15)' : 'none',
-          }}
-        >
-          All Categories
-        </button>
+      {/* Scent Preference Filters Grid */}
+      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4 mb-8">
         {categories.map((c) => {
           const isSelected = category === c._id;
+          const nameParts = c.name.split(' ');
+          const emoji = nameParts[0];
+          const text = nameParts.slice(1).join(' ');
+
           return (
             <button
               key={c._id}
               onClick={() => { setCategory(isSelected ? '' : c._id); setPage(1); }}
-              className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider shrink-0 transition-all duration-200"
+              className={`flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl transition-all duration-300 hover-lift ${
+                isSelected ? 'ring-1 ring-[var(--color-gold)] shadow-[0_0_15px_rgba(212,175,55,0.15)]' : 'ring-1 ring-transparent hover:ring-[var(--color-border)]'
+              }`}
               style={{
-                background: isSelected ? 'var(--color-accent, #ffffff)' : 'var(--color-bg-elevated)',
-                color: isSelected ? '#0f0f0f' : 'var(--color-text-secondary)',
-                border: `1px solid ${isSelected ? '#ffffff' : 'var(--color-border)'}`,
-                boxShadow: isSelected ? '0 4px 12px rgba(255,255,255,0.15)' : 'none',
+                background: 'var(--color-bg-elevated)',
+                aspectRatio: '1 / 1', // Keep them perfectly square
               }}
             >
-              {c.name}
+              <div className="text-3xl sm:text-4xl mb-2 drop-shadow-lg" style={{ filter: isSelected ? 'drop-shadow(0 0 8px rgba(212,175,55,0.4))' : 'none' }}>
+                {emoji}
+              </div>
+              <div className="text-[10px] sm:text-[11px] font-bold tracking-wider" style={{ color: isSelected ? 'var(--color-gold)' : 'var(--color-text-primary)' }}>
+                {c.name}
+              </div>
             </button>
           );
         })}
       </div>
 
       {/* Toolbar — Mobile responsive flex wrap */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6 items-stretch sm:items-center">
+      <div className="flex flex-col sm:flex-row gap-3 mb-10 md:mb-12 items-stretch sm:items-center">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
@@ -178,7 +172,7 @@ function ProductsContent() {
 
       {/* Filters Panel — Mobile responsive vertical stack */}
       {filtersOpen && (
-        <div className="card p-4 sm:p-5 mb-6 flex flex-col sm:flex-row gap-4 sm:gap-6 flex-wrap">
+        <div className="card p-4 sm:p-5 mb-10 md:mb-12 flex flex-col sm:flex-row gap-4 sm:gap-6 flex-wrap">
           {/* Price Range */}
           <div>
             <label className="block text-[11px] font-bold text-[var(--color-gold)] uppercase tracking-wider mb-2">
@@ -211,7 +205,7 @@ function ProductsContent() {
 
       {/* Products Grid — Skeleton loading for high perceived performance */}
       {loading ? (
-        <div className="products-grid">
+        <div className="products-grid" style={{ marginTop: '3rem' }}>
           {Array.from({ length: 8 }).map((_, i) => (
             <ProductCardSkeleton key={i} />
           ))}
@@ -222,7 +216,7 @@ function ProductsContent() {
           <button className="btn btn-secondary" onClick={clearFilters}>Clear filters</button>
         </div>
       ) : (
-        <div className="products-grid fade-in">
+        <div className="products-grid fade-in" style={{ marginTop: '3rem' }}>
           {products.map((p) => <ProductCard key={p._id} product={p} />)}
         </div>
       )}

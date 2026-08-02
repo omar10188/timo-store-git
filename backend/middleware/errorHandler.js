@@ -1,6 +1,7 @@
 const logger = require("../utils/logger");
 
 const errorHandler = (err, req, res, next) => {
+  console.error("RAW ERROR IN HANDLER:", err);
   let error = { ...err };
   error.message = err.message;
   let statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
@@ -45,7 +46,11 @@ const errorHandler = (err, req, res, next) => {
   }
 
   if (logger && logger.error) {
-    logger.error(`${error.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+    if (errors.length > 0) {
+      logger.error(`${error.message}: ${errors.join(', ')} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+    } else {
+      logger.error(`${error.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+    }
   }
 
   res.status(statusCode).json({

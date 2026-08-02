@@ -34,7 +34,7 @@ const createCategory = asyncHandler(async (req, res, next) => {
     return next(err);
   }
 
-  const image = req.file ? `/uploads/${req.file.filename}` : "";
+  const image = req.file ? (req.file.path && req.file.path.startsWith('http') ? req.file.path : `/uploads/products/${req.file.filename}`) : "";
 
   try {
     const category = await Category.create({ name, description, image });
@@ -64,7 +64,7 @@ const updateCategory = asyncHandler(async (req, res, next) => {
   if (name) category.name = name;
   if (description !== undefined) category.description = description;
   if (isActive !== undefined) category.isActive = isActive === "true" || isActive === true;
-  if (req.file) category.image = `/uploads/${req.file.filename}`;
+  if (req.file) category.image = req.file.path && req.file.path.startsWith('http') ? req.file.path : `/uploads/products/${req.file.filename}`;
 
   const updated = await category.save();
   res.json(updated);

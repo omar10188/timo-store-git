@@ -6,6 +6,14 @@ import { motion } from "framer-motion";
 import { Plus, Trash2, Edit } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import AdminQuickEditModal from '@/components/AdminQuickEditModal';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+function getImageUrl(src: string) {
+  if (!src) return '';
+  const decoded = src.startsWith('http') ? src : `${API_BASE}${src}`;
+  return encodeURI(decoded);
+}
 
 export default function AdminProducts() {
   const { products, fetchProducts, deleteProduct, isLoading } = useAdminStore();
@@ -70,7 +78,7 @@ export default function AdminProducts() {
                   <td className="p-4 flex items-center gap-3">
                     <div className="w-10 h-10 bg-black rounded-lg border border-white/10 overflow-hidden flex items-center justify-center text-xs">
                       {product.image ? (
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                        <img src={getImageUrl(product.image)} alt={product.name} className="w-full h-full object-cover" />
                       ) : (
                         "Img"
                       )}
@@ -83,7 +91,11 @@ export default function AdminProducts() {
                       {product.stock} in stock
                     </span>
                   </td>
-                  <td className="p-4 text-sm text-gray-300">{product.category?.name || 'Uncategorized'}</td>
+                  <td className="p-4 text-sm text-gray-300">
+                    {product.categories && product.categories.length > 0
+                      ? product.categories.map((c: any) => c.name).join(', ')
+                      : 'Uncategorized'}
+                  </td>
                   <td className="p-4 flex justify-end gap-3">
                     <Link 
                       href={`/admin/products/${product._id}/edit`}
