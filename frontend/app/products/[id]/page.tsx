@@ -12,6 +12,7 @@ import { useCartStore, useWishlistStore, useAuthStore } from '@/lib/store';
 import StarRating from '@/components/StarRating';
 import ProductCard from '@/components/ProductCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import MobileProductDetail from '@/components/mobile/MobileProductDetail';
 import toast from 'react-hot-toast';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
@@ -489,15 +490,20 @@ export default function ProductDetailPage() {
 
   return (
     <div style={{ background: DS.bg, minHeight: '100vh', color: DS.textPrimary }}>
+      {/* Mobile Product Detail Layout (< 768px) Screen #2 */}
+      {product && <MobileProductDetail product={product} />}
 
-      {/* ══ Ambient top glow ══════════════════════════════════════ */}
-      <div style={{
-        position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
-        width: 700, height: 400, borderRadius: '50%', pointerEvents: 'none', zIndex: 0,
-        background: 'radial-gradient(ellipse at top, rgba(200,169,110,0.06) 0%, transparent 70%)',
-      }} />
+      {/* Desktop Product Detail Layout (>= 768px) */}
+      <div className="hidden md:block">
+        {/* ══ Ambient top glow ══════════════════════════════════════ */}
+        <div style={{
+          position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+          width: 700, height: 400, borderRadius: '50%', pointerEvents: 'none', zIndex: 0,
+          background: 'radial-gradient(ellipse at top, rgba(200,169,110,0.06) 0%, transparent 70%)',
+        }} />
 
-      <div className="container" style={{ position: 'relative', zIndex: 1, padding: '2rem var(--container-padding)', maxWidth: 1200 }}>
+        <div className="container" style={{ position: 'relative', zIndex: 1, padding: '2rem var(--container-padding)', maxWidth: 1200 }}>
+
 
         {/* ── Breadcrumb ── */}
         <div style={{
@@ -1172,6 +1178,7 @@ export default function ProductDetailPage() {
           }
         }
       `}</style>
+      </div>
     </div>
   );
 }

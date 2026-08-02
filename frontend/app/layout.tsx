@@ -3,6 +3,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
+import MobileBottomNav from '@/components/mobile/MobileBottomNav';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from 'react-hot-toast';
 
@@ -57,16 +58,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
 
-          {/* Navbar — always visible */}
+          {/* Navbar — desktop and mobile header */}
           <Navbar />
 
           {/* Cart Drawer — always mounted, slides in/out */}
           <CartDrawer />
 
-          {/* Main content */}
-          <main style={{ minHeight: '100vh', paddingTop: '72px' }}>
+          {/* Main content — mobile safe-area bottom padding */}
+          <main className="pt-0 md:pt-[72px] pb-[84px] md:pb-0" style={{ minHeight: '100vh' }}>
             {children}
           </main>
+
+          {/* Fixed Mobile Bottom Navigation Tab Bar */}
+          <MobileBottomNav />
 
           {/* Footer */}
           <Footer />

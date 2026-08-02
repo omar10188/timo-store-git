@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Star, ShieldCheck, Truck, RefreshCcw, Sparkles } from 'lucide-react';
+import { ArrowRight, Star, ShieldCheck, Truck, RefreshCcw, Sparkles, Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { productsAPI, categoriesAPI } from '@/lib/api';
 import ProductCard, { Product } from '@/components/ProductCard';
+import MobileProductCard from '@/components/mobile/MobileProductCard';
+import MobileHeader from '@/components/mobile/MobileHeader';
+import MobileFilterSheet, { FilterState } from '@/components/mobile/MobileFilterSheet';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface Category {
@@ -27,21 +30,35 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [trending, setTrending] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Mobile Filter Sheet & Search State
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [mobileSearch, setMobileSearch] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState<FilterState>({
+    gender: '',
+    accords: [],
+    season: [],
+    minPrice: '',
+    maxPrice: '',
+  });
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [featuredRes, categoriesRes, newRes, trendingRes] = await Promise.all([
+        const [featuredRes, categoriesRes, newRes, trendingRes, allRes] = await Promise.all([
           productsAPI.getAll({ isFeatured: 'true', limit: 4 }),
           categoriesAPI.getAll(),
           productsAPI.getAll({ limit: 8, sort: 'newest' }),
           productsAPI.getTrending(),
+          productsAPI.getAll({ limit: 20 }),
         ]);
         setFeatured(featuredRes.data.products || []);
         setCategories(categoriesRes.data || []);
         setNewArrivals(newRes.data.products || []);
         setTrending(trendingRes.data || []);
+        setAllProducts(allRes.data.products || []);
       } catch (err) {
         console.error('Failed to load homepage data:', err);
       } finally {
@@ -51,16 +68,101 @@ export default function HomePage() {
     loadData();
   }, []);
 
+  const handleApplyMobileFilters = (filters: FilterState) => {
+    setAppliedFilters(filters);
+    // Refresh products based on filters
+    const params: Record<string, string> = { limit: '20' };
+    if (filters.minPrice) params.minPrice = filters.minPrice;
+    if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+    if (mobileSearch) params.search = mobileSearch;
+    
+    productsAPI.getAll(params).then((res) => {
+      setAllProducts(res.data.products || []);
+    }).catch(() => {});
+  };
+
+  // Filter products by search
+  const filteredProducts = allProducts.filter((p) =>
+    p.name.toLowerCase().includes(mobileSearch.toLowerCase())
+  );
+
   return (
     <div className="transition-colors duration-500">
-      {/* ── Hero Section ─────────────────────────────────────────────── */}
-      <section
-        className="relative min-h-[90vh] flex items-center overflow-hidden"
-        style={{
-          /* Navy = ambient atmosphere layer */
-          background: 'radial-gradient(ellipse 90% 80% at 50% 110%, rgba(28,43,82,0.22) 0%, transparent 70%), var(--color-bg)',
-        }}
-      >
+      {/* ── MOBILE HOME VIEW (< 768px) ── Screen #1 ──────────────────────── */}
+      <div className="md:hidden">
+        {/* Sticky Top Header */}
+        <MobileHeader title="Scent Sphere" />
+
+        <div className="px-4 pt-3 pb-4">
+          {/* Row below header: Filter pill button (left) + Search input (right) */}
+          <div className="flex items-center gap-3 mb-5">
+            <button
+              onClick={() => setIsFilterOpen(true)}
+              className="flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold shrink-0 transition-transform active:scale-95"
+              style={{
+                background: 'var(--color-bg-elevated)',
+                color: 'var(--color-text-primary)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <span>Filter by</span>
+              <ChevronDown size={14} className="text-[var(--color-gold)]" />
+            </button>
+
+            <div className="flex-1 flex items-center gap-2 rounded-full px-3.5 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border)]">
+              <Search size={15} className="text-[var(--color-text-muted)] shrink-0" />
+              <input
+                type="text"
+                placeholder="Search perfumes..."
+                value={mobileSearch}
+                onChange={(e) => setMobileSearch(e.target.value)}
+                className="w-full bg-transparent text-xs font-medium outline-none text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]"
+              />
+            </div>
+          </div>
+
+          {/* Section Title */}
+          <div className="mb-4">
+            <h2 className="font-serif text-xl font-bold tracking-wide text-[var(--color-text-primary)]">
+              Popular Perfumes
+            </h2>
+          </div>
+
+          {/* 2-Column Product Grid */}
+          {loading ? (
+            <LoadingSpinner />
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-12 text-xs text-[var(--color-text-muted)]">
+              No perfumes match your search.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {filteredProducts.map((product) => (
+                <MobileProductCard key={product._id} product={product} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Filter Sheet Drawer */}
+        <MobileFilterSheet
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          onApply={handleApplyMobileFilters}
+          initialFilters={appliedFilters}
+        />
+      </div>
+
+      {/* ── DESKTOP HOME VIEW (>= 768px) ────────────────────────────────── */}
+      <div className="hidden md:block">
+        {/* ── Hero Section ─────────────────────────────────────────────── */}
+        <section
+          className="relative min-h-[90vh] flex items-center overflow-hidden"
+          style={{
+            /* Navy = ambient atmosphere layer */
+            background: 'radial-gradient(ellipse 90% 80% at 50% 110%, rgba(28,43,82,0.22) 0%, transparent 70%), var(--color-bg)',
+          }}
+        >
         {/* Single gold glow focal point — right side, soft */}
         <div
           aria-hidden="true"
@@ -443,6 +545,7 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+      </div>
     </div>
   );
 }
