@@ -26,11 +26,11 @@ const HolographicCard: React.FC<HolographicCardProps> = ({
   children,
   width      = "250px",
   height     = "350px",
-  glowColor  = "rgba(0, 200, 255, 0.35)",
-  holoColor1 = "rgba(0, 200, 255, 0.18)",
-  holoColor2 = "rgba(120, 80, 255, 0.12)",
+  glowColor  = "rgba(212, 168, 83, 0.32)",   // gold focal glow
+  holoColor1 = "rgba(212, 168, 83, 0.14)",   // gold foil tone
+  holoColor2 = "rgba(28, 43, 82, 0.20)",     // navy depth tone
   className  = "",
-  tiltMax    = 14,
+  tiltMax    = 12,          // reduced from 14 — more restrained, premium
   floatIdle  = true,
 }) => {
   const cardRef   = useRef<HTMLDivElement>(null);

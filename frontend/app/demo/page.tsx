@@ -146,11 +146,11 @@ export default function HoloDemo() {
             Add to Cart
           </GradientButton>
 
-          <GradientButton variant="cyan" iconRight={ArrowRight}>
+          <GradientButton variant="navy" iconRight={ArrowRight}>
             Explore Now
           </GradientButton>
 
-          <GradientButton variant="purple" iconLeft={Zap}>
+          <GradientButton variant="navy" iconLeft={Zap}>
             Upgrade Plan
           </GradientButton>
 
@@ -181,7 +181,7 @@ export default function HoloDemo() {
             {loading ? "Processing…" : "Click to Load"}
           </GradientButton>
 
-          <GradientButton variant="cyan" disabled iconLeft={Globe}>
+          <GradientButton variant="navy" disabled iconLeft={Globe}>
             Disabled
           </GradientButton>
         </div>

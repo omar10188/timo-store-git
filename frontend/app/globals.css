@@ -8,29 +8,37 @@
 :root,
 html.dark {
   /* ── Backgrounds — near-black luxury palette ── */
-  --color-bg: #0f0f0f;
-  --color-bg-secondary: #141414;
-  --color-bg-card: #1a1a1a;
-  --color-bg-elevated: #242424;
+  --color-bg: #0a0b10;
+  --color-bg-secondary: #0f1018;
+  --color-bg-card: #13141c;
+  --color-bg-elevated: #1c1e2a;
 
-  /* ── Borders — ultra-subtle white lines ── */
-  --color-border: rgba(255, 255, 255, 0.07);
-  --color-border-gold: rgba(255, 255, 255, 0.18);
+  /* ── Navy system — structural depth ── */
+  --color-navy: #1c2b52;
+  --color-navy-deep: #16213f;
+  --color-navy-light: #2f3e7a;
+  --color-navy-muted: rgba(28, 43, 82, 0.35);
+  --color-navy-border: rgba(47, 62, 122, 0.30);
 
-  /* ── White accent (luxury minimal) ── */
+  /* ── Borders ── */
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-gold: rgba(212, 168, 83, 0.25);
+
+  /* ── White accent ── */
   --color-accent: #ffffff;
-  --color-accent-muted: rgba(255, 255, 255, 0.08);
+  --color-accent-muted: rgba(255, 255, 255, 0.06);
 
-  /* ── Gold accent palette (kept for highlights only) ── */
-  --color-gold: #c8a96e;
-  --color-gold-light: #dcc08a;
-  --color-gold-dark: #a88840;
-  --color-gold-muted: rgba(200, 169, 110, 0.12);
+  /* ── Gold accent — primary interaction color ── */
+  --color-gold: #d4a853;
+  --color-gold-light: #e8c97a;
+  --color-gold-dark: #b8892f;
+  --color-gold-muted: rgba(212, 168, 83, 0.10);
 
-  /* ── Text ── */
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #aaaaaa;
-  --color-text-muted: #555555;
+  /* ── Text — on-dark ── */
+  --color-text-primary: #f0ece4;
+  --color-text-secondary: #9a9490;
+  --color-text-muted: #4a4640;
+  --color-text-on-navy: #c8c4bc;
 
   /* ── Status ── */
   --color-success: #4caf7d;
@@ -38,20 +46,24 @@ html.dark {
   --color-warning: #f0a04b;
   --color-info: #4b9cf0;
 
-  /* ── Shadows — deep, cinematic ── */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.75);
-  --shadow-gold: 0 0 24px rgba(200, 169, 110, 0.18);
-  --shadow-gold-lg: 0 0 48px rgba(200, 169, 110, 0.28);
-  --shadow-white: 0 0 24px rgba(255, 255, 255, 0.08);
+  /* ── Shadows — cinematic depth ── */
+  --shadow-sm:      0 2px 8px rgba(0, 0, 0, 0.6);
+  --shadow-md:      0 6px 24px rgba(0, 0, 0, 0.7);
+  --shadow-lg:      0 16px 48px rgba(0, 0, 0, 0.8);
+  /* Gold glow — strong, used ONLY for interactive hover/focus ── */
+  --shadow-gold:    0 4px 24px rgba(212, 168, 83, 0.22);
+  --shadow-gold-lg: 0 0 48px rgba(212, 168, 83, 0.38), 0 0 0 1px rgba(212,168,83,0.18);
+  /* Navy ambient — very low opacity, structural only ── */
+  --shadow-navy:    0 8px 40px rgba(28, 43, 82, 0.40);
+  --shadow-navy-sm: 0 2px 12px rgba(28, 43, 82, 0.25);
 
   /* ── Glassmorphism ── */
-  --glass-bg: rgba(26, 26, 26, 0.85);
+  --glass-bg: rgba(19, 20, 28, 0.88);
+  --glass-navy: rgba(28, 43, 82, 0.72);
 
   /* ── Scrollbar ── */
-  --scrollbar-track: #0f0f0f;
-  --scrollbar-thumb: rgba(255, 255, 255, 0.06);
+  --scrollbar-track: #0a0b10;
+  --scrollbar-thumb: rgba(212, 168, 83, 0.12);
 }
 
 /* ─── CSS Custom Properties — Light Mode ─────────────────────────────────────── */
@@ -62,20 +74,28 @@ html.light {
   --color-bg-card: #ffffff;
   --color-bg-elevated: #ede9e2;
 
+  /* Navy — lighter tint for light mode */
+  --color-navy: #e8edf8;
+  --color-navy-deep: #dde4f4;
+  --color-navy-light: #2f3e7a;
+  --color-navy-muted: rgba(47, 62, 122, 0.08);
+  --color-navy-border: rgba(47, 62, 122, 0.12);
+
   /* Borders */
   --color-border: rgba(0, 0, 0, 0.07);
-  --color-border-gold: rgba(154, 114, 50, 0.25);
+  --color-border-gold: rgba(184, 137, 47, 0.30);
 
-  /* Gold accent — deep bronze, NOT bright yellow */
-  --color-gold: #9a7232;
-  --color-gold-light: #b8902f;
-  --color-gold-dark: #7a5c1e;
-  --color-gold-muted: rgba(154, 114, 50, 0.10);
+  /* Gold accent — deep warm bronze */
+  --color-gold: #a87828;
+  --color-gold-light: #c49038;
+  --color-gold-dark: #8a6020;
+  --color-gold-muted: rgba(168, 120, 40, 0.10);
 
   /* Text — warm near-black */
   --color-text-primary: #1a1714;
   --color-text-secondary: #5c5248;
   --color-text-muted: #9c8f84;
+  --color-text-on-navy: #2a2420;
 
   /* Status */
   --color-success: #2e7d52;
@@ -83,19 +103,22 @@ html.light {
   --color-warning: #b86010;
   --color-info: #2060b8;
 
-  /* Shadows — softer for light */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-  --shadow-gold: 0 0 20px rgba(154, 114, 50, 0.15);
-  --shadow-gold-lg: 0 0 40px rgba(154, 114, 50, 0.20);
+  /* Shadows */
+  --shadow-sm:      0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md:      0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-lg:      0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-gold:    0 4px 20px rgba(168, 120, 40, 0.18);
+  --shadow-gold-lg: 0 0 40px rgba(168, 120, 40, 0.28), 0 0 0 1px rgba(168,120,40,0.14);
+  --shadow-navy:    0 4px 20px rgba(47, 62, 122, 0.12);
+  --shadow-navy-sm: 0 2px 8px rgba(47, 62, 122, 0.08);
 
   /* Glassmorphism */
-  --glass-bg: rgba(250, 249, 246, 0.85);
+  --glass-bg:   rgba(250, 249, 246, 0.88);
+  --glass-navy: rgba(232, 237, 248, 0.80);
 
   /* Scrollbar */
   --scrollbar-track: #f4f2ed;
-  --scrollbar-thumb: rgba(0, 0, 0, 0.10);
+  --scrollbar-thumb: rgba(168, 120, 40, 0.15);
 }
 
 /* ─── Shared tokens (theme-independent) ─────────────────────────────────────── */
@@ -120,10 +143,10 @@ html.light {
   --radius-xl: 28px;
   --radius-full: 9999px;
 
-  /* Transitions */
-  --transition-fast: 150ms ease;
-  --transition-base: 250ms ease;
-  --transition-slow: 400ms ease;
+  /* Transitions — premium pace: slower, easeOut feel */
+  --transition-fast: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-base: 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 550ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Container */
   --container-max: 1280px;
@@ -495,11 +518,12 @@ input, textarea, select {
 .holographic-card:hover {
   box-shadow:
     0 28px 70px rgba(0, 0, 0, 0.8),
-    0 1px 0 rgba(255, 255, 255, 0.12) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.14),
-    /* coloured glow ring — stronger */
-    0 0 35px 6px var(--holo-glow-color, rgba(0, 200, 255, 0.35)),
-    0 0 70px 12px var(--holo-glow-color, rgba(0, 200, 255, 0.18));
+    0 1px 0 rgba(255, 255, 255, 0.10) inset,
+    0 0 0 1px rgba(212, 168, 83, 0.18),
+    /* Gold glow ring — dominant interaction signal */
+    0 0 32px 5px var(--holo-glow-color, rgba(212, 168, 83, 0.32)),
+    /* Navy ambient — depth, very subtle */
+    0 0 80px 20px rgba(28, 43, 82, 0.18);
 }
 
 .holographic-card:focus-visible {
@@ -533,14 +557,14 @@ input, textarea, select {
   border-radius: inherit;
   background:
     radial-gradient(
-      ellipse 70% 65% at var(--x, 50%) var(--y, 50%),
-      var(--color-glow, rgba(0, 200, 255, 0.55)),
-      transparent 65%
+      ellipse 65% 60% at var(--x, 50%) var(--y, 50%),
+      var(--color-glow, rgba(212, 168, 83, 0.40)),
+      transparent 62%
     ),
     linear-gradient(
       128deg,
-      var(--color-holo-1, rgba(0, 200, 255, 0.28)),
-      var(--color-holo-2, rgba(120, 80, 255, 0.2))
+      var(--color-holo-1, rgba(212, 168, 83, 0.16)),
+      var(--color-holo-2, rgba(28, 43, 82, 0.22))
     );
   mix-blend-mode: screen;
 }
@@ -563,20 +587,19 @@ input, textarea, select {
   animation: holo-shimmer 5s ease-in-out infinite;
 }
 
-/* Rainbow foil on hover — subtle, elegant */
+/* Gold ↔ Navy duotone foil on hover — premium, no rainbow */
 .holographic-card:hover .holo-shine {
   background:
     linear-gradient(
-      112deg,
-      transparent               0%,
-      rgba(255,  0, 128, 0.045) 18%,
-      rgba(  0,200, 255, 0.065) 36%,
-      rgba(120, 80, 255, 0.055) 54%,
-      rgba(255,220,   0, 0.04)  72%,
-      rgba(  0,255, 180, 0.04)  88%,
-      transparent               100%
+      118deg,
+      transparent                    0%,
+      rgba(212, 168,  83, 0.055)    22%,
+      rgba(232, 201, 122, 0.09)     40%,
+      rgba( 28,  43,  82, 0.055)    58%,
+      rgba( 47,  62, 122, 0.065)    76%,
+      transparent                   100%
     );
-  animation: holo-foil 3.5s var(--ease-in-out) infinite;
+  animation: holo-foil 4.5s var(--ease-in-out) infinite;
 }
 
 /* Border shimmer ring — outline only, does NOT cover content */

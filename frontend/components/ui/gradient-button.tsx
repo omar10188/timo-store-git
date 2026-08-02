@@ -5,7 +5,7 @@ import { Loader2, LucideIcon } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ButtonVariant = "gold" | "cyan" | "purple" | "ghost" | "danger";
+type ButtonVariant = "gold" | "navy" | "ghost" | "danger";
 type ButtonSize    = "sm" | "md" | "lg";
 
 interface GradientButtonProps
@@ -26,34 +26,28 @@ const VARIANTS: Record<
   { grad: string; glow: string; text: string; border: string }
 > = {
   gold: {
-    grad:   "linear-gradient(135deg, #e8c97a 0%, #d4a853 40%, #b8892f 100%)",
-    glow:   "rgba(212, 168, 83, 0.45)",
-    text:   "#0a0a0a",
-    border: "rgba(232, 201, 122, 0.4)",
+    grad:   "linear-gradient(135deg, #e8c97a 0%, #d4a853 45%, #b8892f 100%)",
+    glow:   "rgba(212, 168, 83, 0.42)",
+    text:   "#0a0b10",
+    border: "rgba(232, 201, 122, 0.38)",
   },
-  cyan: {
-    grad:   "linear-gradient(135deg, #00e5ff 0%, #00b4d8 40%, #0077b6 100%)",
-    glow:   "rgba(0, 200, 255, 0.45)",
-    text:   "#0a0a0a",
-    border: "rgba(0, 229, 255, 0.35)",
-  },
-  purple: {
-    grad:   "linear-gradient(135deg, #c77dff 0%, #9b59b6 40%, #6a0572 100%)",
-    glow:   "rgba(155, 89, 182, 0.45)",
-    text:   "#ffffff",
-    border: "rgba(199, 125, 255, 0.35)",
+  navy: {
+    grad:   "linear-gradient(135deg, #2f3e7a 0%, #1c2b52 50%, #16213f 100%)",
+    glow:   "rgba(28, 43, 82, 0.55)",
+    text:   "rgba(200, 196, 188, 0.90)",
+    border: "rgba(47, 62, 122, 0.45)",
   },
   ghost: {
     grad:   "transparent",
-    glow:   "rgba(212, 168, 83, 0.2)",
+    glow:   "rgba(212, 168, 83, 0.18)",
     text:   "var(--color-gold)",
     border: "var(--color-border-gold)",
   },
   danger: {
     grad:   "linear-gradient(135deg, #ff6b6b 0%, #e05c5c 40%, #b83232 100%)",
-    glow:   "rgba(224, 92, 92, 0.45)",
+    glow:   "rgba(224, 92, 92, 0.42)",
     text:   "#ffffff",
-    border: "rgba(255, 107, 107, 0.35)",
+    border: "rgba(255, 107, 107, 0.32)",
   },
 };
 
@@ -155,16 +149,17 @@ const GradientButton: React.FC<GradientButtonProps> = ({
     [isDisabled, v.glow, v.border, onMouseUp]
   );
 
-  // ── Focus ring ──
+  // ── Focus ring — navy-tinted, not gold ──
   const handleFocus = useCallback(
     (e: React.FocusEvent<HTMLButtonElement>) => {
       if (btnRef.current) {
-        btnRef.current.style.outline = `2px solid ${v.border.replace("0.35", "0.9")}`;
+        // Navy focus ring for accessibility — gold is reserved for interactions
+        btnRef.current.style.outline = `2px solid rgba(47,62,122,0.85)`;
         btnRef.current.style.outlineOffset = "3px";
       }
       onFocus?.(e);
     },
-    [v.border, onFocus]
+    [onFocus]
   );
 
   const handleBlur = useCallback(
@@ -210,7 +205,7 @@ const GradientButton: React.FC<GradientButtonProps> = ({
         /* shadows */
         boxShadow:      baseBoxShadow,
         /* motion */
-        transition:     "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s ease, opacity 0.2s ease",
+        transition:     "transform 0.38s cubic-bezier(0.16,1,0.3,1), box-shadow 0.38s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease",
         willChange:     "transform, box-shadow",
         /* misc */
         cursor:         isDisabled ? "not-allowed" : "pointer",

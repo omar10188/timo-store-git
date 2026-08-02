@@ -57,17 +57,26 @@ export default function HomePage() {
       <section
         className="relative min-h-[90vh] flex items-center overflow-hidden"
         style={{
-          background: 'radial-gradient(ellipse at 70% 50%, var(--color-gold-muted) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, var(--color-gold-muted) 0%, transparent 50%)',
+          /* Navy = ambient atmosphere layer */
+          background: 'radial-gradient(ellipse 90% 80% at 50% 110%, rgba(28,43,82,0.22) 0%, transparent 70%), var(--color-bg)',
         }}
       >
-        {/* Decorative orbs */}
+        {/* Single gold glow focal point — right side, soft */}
         <div
-          className="absolute top-[10%] right-[5%] w-[600px] h-[600px] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, var(--color-gold-muted) 0%, transparent 70%)' }}
+          aria-hidden="true"
+          className="absolute top-[8%] right-[4%] w-[500px] h-[500px] rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(212,168,83,0.11) 0%, transparent 68%)',
+            filter: 'blur(1px)',
+          }}
         />
+        {/* Navy ambient orb — bottom-left, barely visible */}
         <div
-          className="absolute bottom-0 left-[-10%] w-[400px] h-[400px] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, var(--color-gold-muted) 0%, transparent 70%)' }}
+          aria-hidden="true"
+          className="absolute bottom-[-5%] left-[-8%] w-[380px] h-[380px] rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(28,43,82,0.18) 0%, transparent 70%)',
+          }}
         />
 
         <div className="container mx-auto px-4 sm:px-6">
@@ -96,7 +105,7 @@ export default function HomePage() {
               <br />
               <span
                 className="bg-clip-text text-transparent"
-                style={{ backgroundImage: 'linear-gradient(135deg, var(--color-gold-light), var(--color-gold-dark))' }}
+                style={{ backgroundImage: 'linear-gradient(125deg, var(--color-gold-light) 0%, var(--color-gold) 60%, var(--color-gold-dark) 100%)' }}
               >
                 Signature Scent
               </span>
@@ -112,28 +121,43 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/products"
-                className="flex items-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold transition-all hover:scale-105"
+                className="flex items-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold"
                 style={{
-                  background: 'linear-gradient(135deg, var(--color-gold), var(--color-gold-dark))',
-                  color: 'var(--color-bg)',
+                  background: 'linear-gradient(135deg, var(--color-gold-light) 0%, var(--color-gold) 50%, var(--color-gold-dark) 100%)',
+                  color:     '#0a0b10',
                   boxShadow: 'var(--shadow-gold)',
+                  transition: 'box-shadow 0.38s cubic-bezier(0.16,1,0.3,1), transform 0.38s cubic-bezier(0.16,1,0.3,1)',
                 }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-gold-lg)')}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-gold)')}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-gold-lg)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-gold)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                }}
               >
                 Shop Collection <ArrowRight size={18} />
               </Link>
               <Link
                 href="/products?featured=true"
-                className="flex items-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold transition-all"
+                className="flex items-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold"
                 style={{
-                  background: 'transparent',
-                  border: '1px solid var(--color-border-gold)',
-                  color: 'var(--color-gold)',
+                  background:  'transparent',
+                  border:      '1px solid var(--color-border-gold)',
+                  color:       'var(--color-gold)',
+                  transition: 'background 0.38s cubic-bezier(0.16,1,0.3,1), border-color 0.38s ease',
                 }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--color-gold-muted)')}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(212,168,83,0.09)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border-gold)';
+                }}
               >
+
                 Featured Picks
               </Link>
             </div>

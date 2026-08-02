@@ -47,17 +47,18 @@ function getImageUrl(src: string) {
   return `${API_BASE}${src}`;
 }
 
-// ─── Typed spring configs ──────────────────────────────────────────────────
-const springSmooth: Transition = { type: 'spring', stiffness: 300, damping: 30 };
-const springBouncy: Transition = { type: 'spring', stiffness: 500, damping: 25 };
-const springGentle: Transition = { type: 'spring', stiffness: 150, damping: 20 };
+// ─── Typed spring configs — premium pace ───────────────────────────────────────────
+// Slower, easeOut-leaning springs — elegant not bouncy
+const springSmooth: Transition = { type: 'spring', stiffness: 220, damping: 32 };
+const springBouncy: Transition = { type: 'spring', stiffness: 380, damping: 30 };
+const springGentle: Transition = { type: 'spring', stiffness: 100, damping: 22 };
 
-// ─── Float variant ─────────────────────────────────────────────────────────
+// ─── Float variant — very subtle, slower for premium feel ───────────────────────
 const floatVariants: Variants = {
   animate: {
-    y: [0, -4, 0],
+    y: [0, -3, 0],     // reduced amplitude — less playful, more refined
     transition: {
-      duration: 4,
+      duration: 5.5,   // slower loop for premium feel
       repeat: Infinity,
       ease: 'easeInOut' as const,
     },
@@ -190,10 +191,11 @@ export default function ProductCard({ product }: ProductCardProps) {
           viewport={{ once: true, margin: '-50px' }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{
-            scale: 1.03,
+            scale: 1.025,  // more restrained scale for premium feel
             boxShadow:
-              '0 0 0 1.5px rgba(201,169,110,0.6), 0 20px 60px -10px rgba(201,169,110,0.3), 0 4px 20px -4px rgba(0,0,0,0.8)',
-            transition: springSmooth,
+              '0 0 0 1px rgba(47,62,122,0.35), 0 12px 40px -8px rgba(28,43,82,0.40), 0 0 32px rgba(212,168,83,0.18)',
+              // ↑ Navy border FIRST (structural), then gold ambient glow (interaction signal)
+            transition: { ...springSmooth, duration: 0.45 },
           }}
           style={{
             rotateX,
