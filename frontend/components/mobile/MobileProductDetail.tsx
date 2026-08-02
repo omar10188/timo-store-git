@@ -61,6 +61,10 @@ export default function MobileProductDetail({ product }: ProductDetailProps) {
   const finalPrice = displayPrice * priceMultiplier;
 
   const handleBuyNow = async () => {
+    if (typeof window !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(50); } catch {}
+    }
+
     if (!isAuthenticated) {
       toast.error('Please sign in to complete purchase');
       router.push('/auth/login');
@@ -74,10 +78,9 @@ export default function MobileProductDetail({ product }: ProductDetailProps) {
         image: product.image,
       });
       toast.success('Added to cart!');
-      router.push('/checkout');
+      setTimeout(() => router.push('/checkout'), 400);
     } catch {
       toast.error('Failed to proceed');
-    } finally {
       setAdding(false);
     }
   };
@@ -164,20 +167,32 @@ export default function MobileProductDetail({ product }: ProductDetailProps) {
         </div>
 
         {/* Product Name */}
-        <div className="text-center mt-2 mb-3">
+        <div className="text-center mt-2 mb-2">
           <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[var(--color-gold)] mb-1">
             {product.brand || product.categoryName || 'LUXURY PARFUM'}
           </p>
           <h2 className="font-serif text-2xl font-bold tracking-wide text-[var(--color-text-primary)]">
             {product.name}
           </h2>
+          {/* Smart Product Hint — Decision Shortcut */}
+          <p className="text-[11px] font-medium text-center text-[var(--color-text-secondary)] mt-1.5 flex items-center justify-center gap-1">
+            <Sparkles size={12} className="text-[var(--color-gold)]" />
+            <span>Perfect for: Evening • Winter • Bold Signature</span>
+          </p>
         </div>
 
         {/* Short Description */}
-        <p className="text-center text-xs leading-relaxed text-[var(--color-text-secondary)] px-4 mb-6">
+        <p className="text-center text-xs leading-relaxed text-[var(--color-text-secondary)] px-4 mb-4">
           {product.description ||
             'Crafted with master delicacy, blending rare natural essences to create an unforgettable signature trail.'}
         </p>
+
+        {/* Social Proof Badge — Trust Boost */}
+        <div className="flex flex-col items-center gap-1 mb-5">
+          <span className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[11px] font-semibold bg-[rgba(212,168,83,0.12)] border border-[rgba(212,168,83,0.25)] text-[var(--color-gold)]">
+            🔥 120+ bought this week • ⭐ {rating.toFixed(1)} ({reviewsCount} reviews)
+          </span>
+        </div>
 
         <div className="h-px w-full bg-[var(--color-border)] mb-5" />
 
@@ -225,11 +240,11 @@ export default function MobileProductDetail({ product }: ProductDetailProps) {
         </div>
 
         {/* Size Selector */}
-        <div className="mb-6">
-          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-[var(--color-text-secondary)] mb-2 text-center">
+        <div className="mb-6 text-center">
+          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-[var(--color-text-secondary)] mb-2">
             Select Bottle Size
           </p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-3 mb-3">
             {(['2ml', '50ml'] as const).map((size) => {
               const isSelected = selectedSize === size;
               return (
@@ -248,6 +263,11 @@ export default function MobileProductDetail({ product }: ProductDetailProps) {
               );
             })}
           </div>
+
+          {/* Light Urgency Text */}
+          <p className="text-[10px] font-semibold text-amber-400/90 flex items-center justify-center gap-1">
+            ⚡ Limited stock available in 50ml — Order soon
+          </p>
         </div>
       </div>
 

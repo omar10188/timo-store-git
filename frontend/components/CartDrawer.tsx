@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, MessageCircle } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { cartAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -49,6 +49,14 @@ export default function CartDrawer() {
     } catch {
       toast.error('Failed to update quantity');
     }
+  };
+
+  const handleWhatsAppOrder = () => {
+    const message = `🛒 New Order - TIMO Store\n\nItems:\n${items
+      .map((i) => `- ${i.name} x${i.quantity} (EGP ${(i.price * i.quantity).toFixed(0)})`)
+      .join('\n')}\n\n💰 Total: EGP ${totalPrice.toFixed(0)}`;
+    const url = `https://wa.me/201008313604?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   };
 
   return (
@@ -99,34 +107,36 @@ export default function CartDrawer() {
         {/* Items */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.5rem' }}>
           {items.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '1rem', color: 'var(--color-text-muted)' }}>
-              <ShoppingBag size={48} />
-              <p>Your cart is empty</p>
-              <Link href="/products" className="btn btn-secondary" onClick={closeCart} style={{ fontSize: '0.85rem' }}>
-                Start Shopping
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-secondary)' }}>
+              <ShoppingBag size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+              <p style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>Your cart is empty</p>
+              <p style={{ fontSize: '0.875rem' }}>Explore our luxury fragrances and find your scent.</p>
+              <Link href="/products" className="btn btn-primary" style={{ marginTop: '1.5rem', display: 'inline-flex' }} onClick={closeCart}>
+                Browse Products
               </Link>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {items.map((item) => (
-                <div key={item.product} style={{ display: 'flex', gap: '1rem', padding: '1rem', background: 'var(--color-bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                  {/* Image */}
-                  <div style={{ width: '72px', height: '72px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', flexShrink: 0, background: 'var(--color-bg-elevated)' }}>
-                    <img
-                      src={getImageUrl(item.image)}
-                      alt={item.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => { e.currentTarget.src = `https://placehold.co/72x72/161616/d4a853?text=${item.name[0]}`; }}
-                    />
-                  </div>
-
-                  {/* Details */}
+                <div
+                  key={item.product}
+                  style={{
+                    display: 'flex', gap: '1rem', padding: '0.75rem',
+                    borderRadius: 'var(--radius-md)', background: 'var(--color-bg-card)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  <img
+                    src={getImageUrl(item.image)}
+                    alt={item.name}
+                    style={{ width: '64px', height: '64px', objectFit: 'contain', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg-elevated)' }}
+                  />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.name}
                     </p>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--color-gold)', fontWeight: 700 }}>
-                      ${(item.price * item.quantity).toFixed(2)}
+                    <p style={{ color: 'var(--color-gold)', fontWeight: 700, fontSize: '0.875rem', marginTop: '0.2rem' }}>
+                      EGP {item.price.toFixed(0)}
                     </p>
 
                     {/* Quantity controls */}
@@ -166,7 +176,7 @@ export default function CartDrawer() {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <span style={{ color: 'var(--color-text-secondary)' }}>Subtotal</span>
               <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-gold)' }}>
-                ${totalPrice.toFixed(2)}
+                EGP {totalPrice.toFixed(0)}
               </span>
             </div>
             <Link
@@ -177,6 +187,27 @@ export default function CartDrawer() {
             >
               Proceed to Checkout <ArrowRight size={16} />
             </Link>
+
+            <button
+              onClick={handleWhatsAppOrder}
+              className="btn"
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                marginTop: '0.5rem',
+                background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                border: 'none',
+                boxShadow: '0 4px 14px rgba(37, 211, 102, 0.25)',
+              }}
+            >
+              <MessageCircle size={16} className="fill-white text-white" />
+              Order via WhatsApp
+            </button>
+
             <Link
               href="/cart"
               className="btn btn-ghost"

@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import MobileBottomNav from '@/components/mobile/MobileBottomNav';
+import WhatsappFloat from '@/components/mobile/WhatsappFloat';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from 'react-hot-toast';
 
@@ -68,6 +69,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="pt-0 md:pt-[72px] pb-[84px] md:pb-0" style={{ minHeight: '100vh' }}>
             {children}
           </main>
+
+          {/* Floating WhatsApp Conversion Button */}
+          <WhatsappFloat />
 
           {/* Fixed Mobile Bottom Navigation Tab Bar */}
           <MobileBottomNav />
