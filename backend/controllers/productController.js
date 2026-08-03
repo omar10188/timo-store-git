@@ -14,7 +14,22 @@ const createProduct = asyncHandler(async (req, res, next) => {
     }
   }
   
-  const { name, description, price, brand, stock, isFeatured } = req.body;
+  const { name, description, price, brand, stock, isFeatured, gender, intensity } = req.body;
+  
+  // Parse JSON arrays for multi-select fields if they come as strings
+  const parseArray = (val) => {
+    if (!val) return undefined;
+    if (Array.isArray(val)) return val;
+    try {
+      return JSON.parse(val);
+    } catch {
+      return typeof val === 'string' ? val.split(',').map(s => s.trim()) : [val];
+    }
+  };
+
+  const accords = parseArray(req.body.accords);
+  const season = parseArray(req.body.season);
+  const occasion = parseArray(req.body.occasion);
 
   if (!name || !description || !price || !inputCategories || !brand) {
     const missingFields = ["name", "description", "price", "categories", "brand"].filter(field => !req.body[field] && !(field === 'categories' && inputCategories));
@@ -45,6 +60,11 @@ const createProduct = asyncHandler(async (req, res, next) => {
     isFeatured: isFeatured === "true" || isFeatured === true,
     images: finalImagesArray,
     image: finalImage,
+    gender: gender || "unisex",
+    intensity: intensity || "moderate",
+    accords: accords || [],
+    season: season || [],
+    occasion: occasion || [],
   });
 
   res.status(201).json(product);
@@ -64,6 +84,12 @@ const getProducts = asyncHandler(async (req, res, next) => {
   const category = req.query.category || "";
   const isFeatured = req.query.isFeatured;
   const sort = req.query.sort;
+  
+  const gender = req.query.gender;
+  const accords = req.query.accords;
+  const season = req.query.season;
+  const intensity = req.query.intensity;
+  const occasion = req.query.occasion;
 
   const query = {};
 
@@ -78,6 +104,12 @@ const getProducts = asyncHandler(async (req, res, next) => {
   if (isFeatured !== undefined) {
     query.isFeatured = isFeatured === "true" || isFeatured === true;
   }
+
+  if (gender) query.gender = gender;
+  if (intensity) query.intensity = intensity;
+  if (accords) query.accords = { $in: accords.split(',').map(a => new RegExp(a.trim(), 'i')) };
+  if (season) query.season = { $in: season.split(',').map(s => s.trim()) };
+  if (occasion) query.occasion = { $in: occasion.split(',').map(o => new RegExp(o.trim(), 'i')) };
 
   if (minPrice !== null || maxPrice !== null) {
     query.price = {};
@@ -176,7 +208,21 @@ const updateProduct = asyncHandler(async (req, res, next) => {
     }
   }
   
-  const { name, description, price, discount, brand, stock, isFeatured } = req.body;
+  const { name, description, price, discount, brand, stock, isFeatured, gender, intensity } = req.body;
+
+  const parseArray = (val) => {
+    if (!val) return undefined;
+    if (Array.isArray(val)) return val;
+    try {
+      return JSON.parse(val);
+    } catch {
+      return typeof val === 'string' ? val.split(',').map(s => s.trim()) : [val];
+    }
+  };
+
+  const accords = req.body.accords !== undefined ? parseArray(req.body.accords) : undefined;
+  const season = req.body.season !== undefined ? parseArray(req.body.season) : undefined;
+  const occasion = req.body.occasion !== undefined ? parseArray(req.body.occasion) : undefined;
 
   product.name = name || product.name;
   product.description = description || product.description;
@@ -199,6 +245,12 @@ const updateProduct = asyncHandler(async (req, res, next) => {
   
   product.images = finalImagesArray;
   product.image = finalImage;
+  
+  if (gender) product.gender = gender;
+  if (intensity) product.intensity = intensity;
+  if (accords !== undefined) product.accords = accords;
+  if (season !== undefined) product.season = season;
+  if (occasion !== undefined) product.occasion = occasion;
 
   const updatedProduct = await product.save();
   res.json(updatedProduct);

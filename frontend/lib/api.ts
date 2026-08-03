@@ -178,6 +178,7 @@ export const ordersAPI = {
     shippingAddress?: { street: string; city: string; country: string; postalCode?: string };
     paymentMethod?: string;
     couponCode?: string;
+    notes?: string;
   }) => api.post('/orders', data),
   getMyOrders: () => api.get('/orders/my-orders'),
   getById: (id: string) => api.get(`/orders/${id}`),

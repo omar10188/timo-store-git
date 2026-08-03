@@ -1,7 +1,16 @@
+const fs = require("fs");
 const logger = require("../utils/logger");
 
 const errorHandler = (err, req, res, next) => {
-  console.error("RAW ERROR IN HANDLER:", err);
+  // Unlink/delete orphan uploaded file if request failed
+  if (req.file && req.file.path) {
+    fs.unlink(req.file.path, (unlinkErr) => {
+      if (unlinkErr && logger && logger.error) {
+        logger.error(`Failed to delete orphan uploaded file: ${unlinkErr.message}`);
+      }
+    });
+  }
+
   let error = { ...err };
   error.message = err.message;
   let statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
@@ -9,7 +18,7 @@ const errorHandler = (err, req, res, next) => {
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
+    const field = Object.keys(err.keyValue || {})[0] || 'Field';
     error.message = `${field} already exists`;
     statusCode = 400;
   }
@@ -23,7 +32,7 @@ const errorHandler = (err, req, res, next) => {
   // Mongoose validation error
   if (err.name === "ValidationError") {
     error.message = "Validation Error";
-    errors = Object.values(err.errors).map((val) => val.message);
+    errors = Object.values(err.errors || {}).map((val) => val.message);
     statusCode = 400;
   }
   

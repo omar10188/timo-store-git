@@ -38,6 +38,11 @@ export default function AdminProductForm({ initialData, onSubmit, isLoading }: A
     stock: initialData?.stock?.toString() || "0",
     isFeatured: initialData?.isFeatured || false,
     tags: initialData?.tags?.join(", ") || "",
+    gender: initialData?.gender || "unisex",
+    intensity: initialData?.intensity || "moderate",
+    accords: initialData?.accords?.join(", ") || "",
+    season: initialData?.season?.join(", ") || "",
+    occasion: initialData?.occasion?.join(", ") || "",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -139,6 +144,22 @@ export default function AdminProductForm({ initialData, onSubmit, isLoading }: A
     if (formData.tags) {
       const tagsArray = formData.tags.split(",").map((t: string) => t.trim()).filter(Boolean);
       tagsArray.forEach((tag: string) => data.append("tags[]", tag));
+    }
+
+    data.append("gender", formData.gender);
+    data.append("intensity", formData.intensity);
+    
+    if (formData.accords) {
+      const accordsArray = formData.accords.split(",").map((a: string) => a.trim()).filter(Boolean);
+      data.append("accords", JSON.stringify(accordsArray));
+    }
+    if (formData.season) {
+      const seasonArray = formData.season.split(",").map((s: string) => s.trim()).filter(Boolean);
+      data.append("season", JSON.stringify(seasonArray));
+    }
+    if (formData.occasion) {
+      const occasionArray = formData.occasion.split(",").map((o: string) => o.trim()).filter(Boolean);
+      data.append("occasion", JSON.stringify(occasionArray));
     }
 
     if (imageFile) {
@@ -267,6 +288,63 @@ export default function AdminProductForm({ initialData, onSubmit, isLoading }: A
                 type="number" name="stock" value={formData.stock} onChange={handleChange} required min="0"
                 className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all"
                 placeholder="0"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Fragrance Finder Properties */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 md:p-8 space-y-6">
+          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-3">Fragrance Properties</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Gender *</label>
+              <select 
+                name="gender" value={formData.gender} onChange={handleChange} required
+                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="unisex">Unisex</option>
+                <option value="men">Men</option>
+                <option value="women">Women</option>
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Intensity *</label>
+              <select 
+                name="intensity" value={formData.intensity} onChange={handleChange} required
+                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="light">Light</option>
+                <option value="moderate">Moderate</option>
+                <option value="strong">Strong</option>
+              </select>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-gray-700">Accords (comma separated)</label>
+              <input 
+                type="text" name="accords" value={formData.accords} onChange={handleChange}
+                placeholder="e.g. woody, citrus, fresh"
+                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-gray-700">Season (comma separated)</label>
+              <input 
+                type="text" name="season" value={formData.season} onChange={handleChange}
+                placeholder="e.g. spring, summer, fall, winter"
+                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-gray-700">Occasion (comma separated)</label>
+              <input 
+                type="text" name="occasion" value={formData.occasion} onChange={handleChange}
+                placeholder="e.g. daily, evening, special"
+                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
           </div>

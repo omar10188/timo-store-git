@@ -42,12 +42,8 @@ export default function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 transition-colors duration-300"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 bg-[#0B0B0B]/95 backdrop-blur-xl border-t border-[rgba(212,168,83,0.3)] shadow-[0_-5px_25px_rgba(0,0,0,0.6)]"
       style={{
-        background: 'var(--glass-bg)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderTop: '1px solid var(--color-border)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
         paddingTop: '8px',
       }}
@@ -62,19 +58,15 @@ export default function MobileBottomNav() {
                 <Icon
                   size={20}
                   style={{
-                    color: tab.isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                    strokeWidth: tab.isActive ? 2.3 : 1.7,
+                    color: tab.isActive ? '#D4AF37' : '#a3a3a3',
+                    strokeWidth: tab.isActive ? 2.2 : 1.7,
                   }}
                 />
                 {tab.badge !== undefined && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold"
-                    style={{
-                      background: 'var(--color-gold)',
-                      color: 'var(--color-bg)',
-                    }}
+                    className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold bg-[#D4AF37] text-[#0B0B0B]"
                   >
                     {tab.badge}
                   </motion.span>
@@ -83,7 +75,7 @@ export default function MobileBottomNav() {
               <span
                 className="text-[10px] font-medium tracking-wide"
                 style={{
-                  color: tab.isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                  color: tab.isActive ? '#D4AF37' : '#a3a3a3',
                 }}
               >
                 {tab.label}
@@ -91,8 +83,7 @@ export default function MobileBottomNav() {
               {tab.isActive && (
                 <motion.div
                   layoutId="bottomNavIndicator"
-                  className="absolute -bottom-1 h-0.5 w-4 rounded-full"
-                  style={{ background: 'var(--color-gold)' }}
+                  className="absolute -bottom-1 h-0.5 w-4 rounded-full bg-[#D4AF37]"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}

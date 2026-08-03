@@ -2,7 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useCallback } from 'react';
-import { ShoppingCart, Heart, Star, Eye, Pencil, Trash2 } from 'lucide-react';
+import Image from 'next/image';
+import { ShoppingCart, Heart, Star, Eye, Pencil, Trash2, Flame } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import {
   motion,
   useMotionValue,
@@ -42,25 +44,23 @@ interface ProductCardProps {
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const WHATSAPP_PHONE = '201008313604';
 
-function getImageUrl(src: string) {
-  if (!src) return '';
-  const decoded = src.startsWith('http') ? src : `${API_BASE}${src}`;
-  return encodeURI(decoded);
+function getImageUrl(src?: string) {
+  if (!src) return '/hero-perfume.png';
+  if (src.startsWith('http')) return src;
+  return `${API_BASE}${src}`;
 }
 
-// ─── Typed spring configs — premium pace ───────────────────────────────────────────
-// Slower, easeOut-leaning springs — elegant not bouncy
 const springSmooth: Transition = { type: 'spring', stiffness: 220, damping: 32 };
 const springBouncy: Transition = { type: 'spring', stiffness: 380, damping: 30 };
 const springGentle: Transition = { type: 'spring', stiffness: 100, damping: 22 };
 
-// ─── Float variant — very subtle, slower for premium feel ───────────────────────
 const floatVariants: Variants = {
   animate: {
-    y: [0, -3, 0],     // reduced amplitude — less playful, more refined
+    y: [0, -3, 0],
     transition: {
-      duration: 5.5,   // slower loop for premium feel
+      duration: 5.5,
       repeat: Infinity,
       ease: 'easeInOut' as const,
     },
@@ -73,6 +73,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isHovered, setIsHovered]       = useState(false);
   const [sweepActive, setSweepActive]   = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [imgError, setImgError]         = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const { isAuthenticated, user } = useAuthStore();
@@ -81,25 +82,29 @@ export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
 
   const isAdmin = user?.role === 'admin';
-
   const isWishlisted = productIds.includes(product._id);
-  const displayPrice = product.salePrice || product.price;
-  const hasDiscount  = Boolean(product.discount && product.discount > 0);
 
-  // ─── Parallax mouse tracking ─────────────────────────────────────────────
+  // Price calculations & discount check
+  const displayPrice = product.salePrice && product.salePrice < product.price ? product.salePrice : product.price;
+  const hasRealDiscount = Boolean(
+    (product.discount && product.discount > 0) ||
+    (product.salePrice && product.salePrice < product.price)
+  );
+
+  const discountPercent = product.discount || (
+    product.salePrice && product.price
+      ? Math.round(((product.price - product.salePrice) / product.price) * 100)
+      : 0
+  );
+
+  // Parallax mouse tracking
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]),  springGentle);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-6, 6]), springGentle);
-  const imgX    = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), springSmooth);
-  const imgY    = useSpring(useTransform(mouseY, [-0.5, 0.5], [-8, 8]), springSmooth);
-  const glowX   = useTransform(mouseX, [-0.5, 0.5], [20, 80]);
-  const glowY   = useTransform(mouseY, [-0.5, 0.5], [20, 80]);
-
-  // ─── Magnetic button ──────────────────────────────────────────────────────
-  const btnX = useSpring(0, springSmooth);
-  const btnY = useSpring(0, springSmooth);
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [5, -5]),  springGentle);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-5, 5]), springGentle);
+  const imgX    = useSpring(useTransform(mouseX, [-0.5, 0.5], [-6, 6]), springSmooth);
+  const imgY    = useSpring(useTransform(mouseY, [-0.5, 0.5], [-6, 6]), springSmooth);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -121,17 +126,18 @@ export default function ProductCard({ product }: ProductCardProps) {
     setIsHovered(false);
     mouseX.set(0);
     mouseY.set(0);
-    btnX.set(0);
-    btnY.set(0);
   };
 
-  const handleBtnMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    btnX.set((e.clientX - rect.left - rect.width  / 2) * 0.35);
-    btnY.set((e.clientY - rect.top  - rect.height / 2) * 0.35);
+  // WhatsApp Order Handler
+  const handleWhatsAppOrder = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const message = `Hi! I want to order ${product.name} - Price: EGP ${displayPrice.toFixed(2)} from Timo Perfume.`;
+    const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  // ─── Cart handler ──────────────────────────────────────────────────────────
+  // Cart Handler
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -182,38 +188,26 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   };
 
-  // ─── Dynamic glow gradient ────────────────────────────────────────────────
-  const glowBg = useTransform(
-    [glowX, glowY],
-    ([x, y]: number[]) =>
-      `radial-gradient(circle at ${x}% ${y}%, rgba(201,169,110,0.13) 0%, transparent 60%)`
-  );
-
   return (
     <div
       onClick={() => router.push(`/products/${product._id}`)}
-      className="block h-full outline-none cursor-pointer"
+      className="block h-full outline-none cursor-pointer w-full box-border"
       style={{ perspective: '1000px' }}
     >
-      {/* ── Floating idle ── */}
       <motion.div variants={floatVariants} animate="animate" className="h-full">
-
-        {/* ── Card ── */}
         <motion.article
           ref={cardRef}
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{
-            scale: 1.025,  // more restrained scale for premium feel
-            boxShadow:
-              '0 0 0 1px rgba(47,62,122,0.35), 0 12px 40px -8px rgba(28,43,82,0.40), 0 0 32px rgba(212,168,83,0.18)',
-              // ↑ Navy border FIRST (structural), then gold ambient glow (interaction signal)
-            transition: { ...springSmooth, duration: 0.45 },
+            scale: 1.02,
+            boxShadow: '0 12px 35px -8px rgba(0, 0, 0, 0.5), 0 0 25px rgba(212,168,83,0.2)',
+            transition: { ...springSmooth, duration: 0.35 },
           }}
           style={{
             rotateX,
@@ -222,19 +216,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             background: 'var(--color-bg-card)',
             border: '1px solid var(--color-border)',
           }}
-          className="group relative flex h-full flex-col rounded-2xl sm:rounded-3xl p-3 sm:p-4 overflow-hidden"
+          className="group relative flex h-full flex-col rounded-2xl p-3 sm:p-4 box-border border border-[var(--color-border)] shadow-md transition-all duration-300"
         >
-          {/* ── Cursor-tracking glow ── */}
-          <motion.div
-            className="absolute inset-0 pointer-events-none rounded-2xl sm:rounded-3xl"
-            style={{
-              background: glowBg,
-              opacity: isHovered ? 1 : 0,
-              transition: 'opacity 0.4s ease',
-            }}
-          />
-
-          {/* ── Light sweep shimmer ── */}
+          {/* Light sweep shimmer */}
           <AnimatePresence>
             {sweepActive && (
               <motion.div
@@ -243,7 +227,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 animate={{ x: '210%', opacity: 0.7 }}
                 exit={{}}
                 transition={{ duration: 0.65, ease: 'easeOut' as const }}
-                className="absolute inset-0 pointer-events-none z-30"
+                className="absolute inset-0 pointer-events-none z-30 rounded-2xl overflow-hidden"
                 style={{
                   background:
                     'linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.09) 50%, transparent 62%)',
@@ -252,293 +236,172 @@ export default function ProductCard({ product }: ProductCardProps) {
             )}
           </AnimatePresence>
 
-          {/* ── Bottom veil on hover ── */}
-          <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-transparent via-transparent to-[rgba(201,169,110,0.05)] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-          {/* ── Image Container ── */}
+          {/* Image Area - Aspect Ratio 4:5 / fixed clean box */}
           <div
-            className="relative flex h-[160px] sm:h-[200px] w-full items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl p-2 sm:p-4"
+            className="relative flex aspect-[4/5] sm:aspect-square w-full items-center justify-center rounded-xl p-3 overflow-hidden"
             style={{ background: 'var(--color-bg-elevated)' }}
           >
-            <motion.img
-              src={getImageUrl(product.image)}
-              alt={product.name}
-              loading="lazy"
-              decoding="async"
-              animate={{
-                scale: isHovered ? 1.12 : 1,
-                filter: isHovered
-                  ? 'drop-shadow(0 8px 24px rgba(201,169,110,0.45))'
-                  : 'drop-shadow(0 4px 8px rgba(201,169,110,0.15))',
-              }}
-              transition={springSmooth}
-              style={{ x: imgX, y: imgY }}
-              className="h-full w-full object-contain"
-              onError={(e) => {
-                e.currentTarget.src = `https://placehold.co/400x400/161616/C9A96E?text=${encodeURIComponent(product.name[0])}`;
-              }}
-            />
+            {!imgError ? (
+              <motion.img
+                src={getImageUrl(product.image)}
+                alt={product.name}
+                loading="lazy"
+                decoding="async"
+                animate={{
+                  scale: isHovered ? 1.08 : 1,
+                  filter: isHovered
+                    ? 'drop-shadow(0 8px 20px rgba(212,168,83,0.35))'
+                    : 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))',
+                }}
+                transition={springSmooth}
+                style={{ x: imgX, y: imgY }}
+                className="h-full w-full object-contain"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              /* Fallback Neutral Perfume Graphic */
+              <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
+                <div className="w-16 h-16 rounded-full bg-[rgba(212,168,83,0.15)] border border-[rgba(212,168,83,0.3)] flex items-center justify-center text-[#D4AF37]">
+                  <Flame size={28} />
+                </div>
+                <span className="text-[11px] font-serif text-[var(--color-text-secondary)] tracking-widest uppercase">
+                  Timo Perfume
+                </span>
+              </div>
+            )}
 
-            {/* Badges */}
-            <div className="absolute left-2 top-2 sm:left-3 sm:top-3 flex flex-col gap-1.5 z-10">
-              {hasDiscount && (
-                <motion.span
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider"
-                  style={{ background: 'var(--color-gold)', color: 'var(--color-bg)' }}
+            {/* Badges - Top Left with proper inset padding */}
+            <div className="absolute left-3 top-3 flex flex-col gap-1.5 z-20">
+              {hasRealDiscount && discountPercent > 0 && (
+                <span
+                  className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm"
+                  style={{ background: '#D4AF37', color: '#0B0B0B' }}
                 >
-                  {product.discount}% OFF
-                </motion.span>
+                  -{discountPercent}%
+                </span>
               )}
               {product.isFeatured && (
-                <span
-                  className="rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider backdrop-blur-md"
-                  style={{
-                    background: 'var(--color-border)',
-                    color: 'var(--color-text-secondary)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                >
-                  Featured
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[rgba(212,168,83,0.15)] text-[#D4AF37] border border-[rgba(212,168,83,0.3)]">
+                  <Flame size={10} className="fill-[#D4AF37]" /> Best Seller
                 </span>
               )}
               {product.stock === 0 && (
-                <span className="rounded-full bg-red-900/80 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
+                <span className="rounded-full bg-red-900/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
                   Out of Stock
                 </span>
               )}
             </div>
 
-            {/* ── Action icons ── */}
-            <div className="absolute right-2 top-2 sm:right-3 sm:top-3 flex flex-col gap-1.5 z-20">
+            {/* Action Buttons - Top Right with proper inset margin */}
+            <div className="absolute right-3 top-3 flex flex-col gap-1.5 z-20">
               {isAdmin && (
                 <>
                   <motion.button
                     onClick={(e) => { e.stopPropagation(); setIsEditModalOpen(true); }}
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={isHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: 12 }}
-                    transition={{ ...springBouncy, delay: 0 }}
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.85 }}
-                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl backdrop-blur-md"
-                    style={{
-                      border: '1px solid var(--color-border)',
-                      background: 'rgba(26,26,26,0.85)',
-                      color: 'var(--color-text-muted)',
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gold)';
-                      (e.currentTarget as HTMLElement).style.color = 'var(--color-gold)';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
-                      (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
-                    }}
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md border border-[var(--color-border)] bg-[var(--color-bg-card)]/90 text-[var(--color-text-primary)] hover:border-[var(--color-gold)] hover:text-[var(--color-gold)]"
                     aria-label="Edit Product"
                   >
-                    <Pencil size={14} />
+                    <Pencil size={13} />
                   </motion.button>
                   <motion.button
                     onClick={handleDelete}
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={isHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: 12 }}
-                    transition={{ ...springBouncy, delay: 0.03 }}
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.85 }}
-                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl backdrop-blur-md"
-                    style={{
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      color: 'rgb(239, 68, 68)',
-                    }}
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md border border-red-500/30 bg-red-500/10 text-red-500"
                     aria-label="Delete Product"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={13} />
                   </motion.button>
                 </>
               )}
 
               <motion.button
                 onClick={handleWishlist}
-                initial={{ opacity: 0, x: 12 }}
-                animate={isHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: 12 }}
-                transition={{ ...springBouncy, delay: 0 }}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.85 }}
-                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl backdrop-blur-md"
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+                className="flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md transition-all"
                 style={{
-                  border:     isWishlisted ? '1px solid var(--color-gold)' : '1px solid var(--color-border)',
-                  background: isWishlisted ? 'rgba(201,169,110,0.18)' : 'rgba(26,26,26,0.85)',
-                  color:      isWishlisted ? 'var(--color-gold)' : 'var(--color-text-muted)',
+                  border: isWishlisted ? '1px solid #D4AF37' : '1px solid var(--color-border)',
+                  background: isWishlisted ? 'rgba(212,168,83,0.2)' : 'rgba(20,20,20,0.75)',
+                  color: isWishlisted ? '#D4AF37' : 'var(--color-text-secondary)',
                 }}
                 aria-label="Wishlist"
               >
-                <Heart size={14} fill={isWishlisted ? 'var(--color-gold)' : 'none'} />
+                <Heart size={14} fill={isWishlisted ? '#D4AF37' : 'none'} />
               </motion.button>
 
               <motion.button
                 onClick={(e) => { e.stopPropagation(); router.push(`/products/${product._id}`); }}
-                initial={{ opacity: 0, x: 12 }}
-                animate={isHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: 12 }}
-                transition={{ ...springBouncy, delay: 0.06 }}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.85 }}
-                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl backdrop-blur-md"
-                style={{
-                  border:     '1px solid var(--color-border)',
-                  background: 'rgba(26,26,26,0.85)',
-                  color:      'var(--color-text-muted)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gold)';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--color-gold)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
-                }}
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+                className="flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md border border-[var(--color-border)] bg-[rgba(20,20,20,0.75)] text-[var(--color-text-secondary)] hover:border-[#D4AF37] hover:text-[#D4AF37]"
                 aria-label="Quick view"
               >
-                <Eye size={14} />
+                <Eye size={13} />
               </motion.button>
             </div>
           </div>
 
-          {/* ── Content ── */}
-          <div className="relative mt-3 sm:mt-4 flex flex-col z-10 flex-1">
-            {/* Brand & Rating */}
-            <div className="mb-1 sm:mb-2 flex items-center justify-between">
-              {(product.categories?.length ? true : product.categoryName || product.brand) && (
-                <div className="flex flex-wrap gap-1 items-center">
-                  {product.brand && (
-                    <span className="text-[10px] sm:text-xs tracking-widest uppercase" style={{ color: 'var(--color-gold)' }}>
-                      {product.brand}
-                    </span>
-                  )}
-                  {product.categories && product.categories.length > 0 ? (
-                    <>
-                      {product.brand && <span className="text-[10px] sm:text-xs opacity-50" style={{ color: 'var(--color-gold)' }}>•</span>}
-                      {product.categories.slice(0, 3).map((cat, idx) => (
-                        <span key={cat._id} className="text-[10px] sm:text-xs tracking-widest uppercase" style={{ color: 'var(--color-gold)' }}>
-                          {idx > 0 && <span className="mx-1 opacity-50">•</span>}
-                          {cat.name}
-                        </span>
-                      ))}
-                      {product.categories.length > 3 && (
-                        <span className="text-[9px] sm:text-[10px] ml-1 px-1 rounded bg-[#D4AF37]/20 text-[#D4AF37]">
-                          +{product.categories.length - 3}
-                        </span>
-                      )}
-                    </>
-                  ) : product.categoryName && (
-                    <span className="text-[10px] sm:text-xs tracking-widest uppercase" style={{ color: 'var(--color-gold)' }}>
-                      {product.brand ? <span className="mx-1 opacity-50">•</span> : null}
-                      {product.categoryName}
-                    </span>
-                  )}
-                </div>
-              )}
-              {(product.numReviews ?? 0) > 0 && (
-                <div className="flex items-center gap-1">
-                  <Star size={10} style={{ fill: 'var(--color-gold)', color: 'var(--color-gold)' }} />
-                  <span className="text-[10px] sm:text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                    {product.rating?.toFixed(1)} ({product.numReviews})
+          {/* Footer Area - Sitting on slightly lighter surface with rounded bottom corners */}
+          <div className="relative mt-3 p-3.5 rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] flex flex-col justify-between flex-1 box-border">
+            
+            {/* Brand / Category & Rating */}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-[#D4AF37] truncate">
+                {product.brand || product.categoryName || 'TIMO PERFUME'}
+              </span>
+              {product.rating && product.rating > 0 && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <Star size={11} className="fill-[#D4AF37] text-[#D4AF37]" />
+                  <span className="text-[11px] font-bold text-[var(--color-text-primary)]">
+                    {product.rating.toFixed(1)}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Name */}
-            <h3
-              className="mb-1 sm:mb-2 text-sm sm:text-base font-medium tracking-wide line-clamp-2 leading-snug"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
+            {/* Product Name */}
+            <h3 className="font-serif text-sm sm:text-base font-bold text-[var(--color-text-primary)] tracking-wide line-clamp-1 mb-2">
               {product.name}
             </h3>
 
-            {/* Price */}
-            <div className="mt-auto pt-2 flex items-end justify-between">
+            {/* Price & Action Row */}
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--color-border)]">
+              {/* Price display */}
               <div className="flex flex-col">
-                {hasDiscount && (
-                  <span
-                    className="text-[10px] sm:text-xs line-through"
-                    style={{ color: 'var(--color-text-muted)' }}
-                  >
+                {hasRealDiscount && (
+                  <span className="text-[11px] text-gray-400 line-through leading-none mb-0.5">
                     EGP {product.price.toFixed(2)}
                   </span>
                 )}
-                <motion.span
-                  key={displayPrice}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-base sm:text-lg font-bold"
-                  style={{ color: hasDiscount ? 'var(--color-gold)' : 'var(--color-text-primary)' }}
-                >
+                <span className="text-sm sm:text-base font-extrabold text-[#D4AF37] leading-none">
                   EGP {displayPrice.toFixed(2)}
-                </motion.span>
+                </span>
+              </div>
+
+              {/* Action Buttons: WhatsApp + Add to Cart */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={handleWhatsAppOrder}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-[rgba(37,211,102,0.15)] text-[#25D366] border border-[rgba(37,211,102,0.4)] hover:bg-[#25D366] hover:text-white transition-all active:scale-95 cursor-pointer"
+                  title="Order via WhatsApp"
+                >
+                  <FaWhatsapp size={15} />
+                </button>
+
+                <button
+                  onClick={handleAddToCart}
+                  disabled={addingToCart || product.stock === 0}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[#D4AF37] text-[#0B0B0B] hover:bg-[#e8c97a] transition-all active:scale-95 cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ShoppingCart size={13} />
+                  <span>{addingToCart ? '...' : 'Buy'}</span>
+                </button>
               </div>
             </div>
 
-            {/* ── Add to Cart — Magnetic + spring bounce ── */}
-            <div className="mt-3 sm:mt-4">
-              <motion.button
-                style={{
-                  x: btnX,
-                  y: btnY,
-                  border:     '1.5px solid var(--color-gold)',
-                  background: isHovered ? 'var(--color-gold)' : 'transparent',
-                  color:      isHovered ? 'var(--color-bg)'   : 'var(--color-gold)',
-                  transition: 'background 0.35s ease, color 0.35s ease',
-                }}
-                onMouseMove={handleBtnMouseMove}
-                onMouseLeave={() => { btnX.set(0); btnY.set(0); }}
-                onClick={handleAddToCart}
-                disabled={addingToCart || product.stock === 0}
-                whileTap={{ scale: 0.94 }}
-                animate={cartPulsed ? { scale: [1, 1.06, 0.97, 1] } : {}}
-                transition={springBouncy}
-                className="relative h-11 sm:h-12 w-full flex items-center justify-center gap-2 rounded-xl text-sm sm:text-base font-semibold tracking-wide overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-
-                {/* Button inner shimmer */}
-                <AnimatePresence>
-                  {isHovered && (
-                    <motion.span
-                      key="btn-shimmer"
-                      initial={{ x: '-100%' }}
-                      animate={{ x: '200%' }}
-                      exit={{}}
-                      transition={{ duration: 0.6, ease: 'easeOut' as const, delay: 0.05 }}
-                      className="absolute inset-0 pointer-events-none"
-                      style={{
-                        background:
-                          'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.16) 50%, transparent 60%)',
-                      }}
-                    />
-                  )}
-                </AnimatePresence>
-
-                {addingToCart ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' as const }}
-                    className="h-4 w-4 sm:h-5 sm:w-5 rounded-full border-2 border-current border-t-transparent"
-                  />
-                ) : product.stock === 0 ? (
-                  <span>Out of Stock</span>
-                ) : (
-                  <motion.span
-                    className="flex items-center gap-2"
-                    animate={cartPulsed ? { scale: [1, 1.15, 1] } : {}}
-                    transition={springBouncy}
-                  >
-                    <ShoppingCart size={16} />
-                    <span>Add to Cart</span>
-                  </motion.span>
-                )}
-              </motion.button>
-            </div>
           </div>
         </motion.article>
       </motion.div>
@@ -553,41 +416,15 @@ export default function ProductCard({ product }: ProductCardProps) {
   );
 }
 
-// ─── Skeleton ──────────────────────────────────────────────────────────────
+// Skeleton
 export function ProductCardSkeleton() {
   return (
-    <article
-      className="flex h-full flex-col rounded-2xl sm:rounded-3xl p-3 sm:p-4 animate-pulse"
-      style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
-      }}
-    >
-      <div
-        className="relative h-[160px] sm:h-[200px] w-full overflow-hidden rounded-xl sm:rounded-2xl"
-        style={{ background: 'var(--color-bg-elevated)' }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.04) 50%, transparent 80%)',
-            backgroundSize: '200% 100%',
-            animation: 'shimmer 1.6s infinite linear',
-          }}
-        />
-      </div>
-      <div className="relative mt-3 sm:mt-4 flex flex-col z-10 flex-1">
-        <div className="mb-1 sm:mb-2 flex items-center justify-between">
-          <div className="h-3 w-16 rounded-full" style={{ background: 'var(--color-border)' }} />
-          <div className="h-3 w-8  rounded-full" style={{ background: 'var(--color-border)' }} />
-        </div>
-        <div className="h-4 sm:h-5 w-3/4 rounded-full mt-2 mb-1" style={{ background: 'var(--color-border)' }} />
-        <div className="h-4 sm:h-5 w-1/2 rounded-full mb-2"      style={{ background: 'var(--color-border)' }} />
-        <div className="mt-auto pt-2">
-          <div className="h-5 sm:h-6 w-20 rounded-full" style={{ background: 'var(--color-border)' }} />
-        </div>
-        <div className="mt-3 sm:mt-4 h-11 sm:h-12 w-full rounded-xl" style={{ background: 'var(--color-border)' }} />
+    <article className="flex flex-col rounded-2xl p-3 sm:p-4 animate-pulse bg-[var(--color-bg-card)] border border-[var(--color-border)]">
+      <div className="aspect-square w-full rounded-xl bg-[var(--color-bg-elevated)]" />
+      <div className="mt-3 p-3.5 rounded-xl bg-[var(--color-bg-elevated)] flex flex-col gap-2">
+        <div className="h-3 w-16 rounded bg-[var(--color-border)]" />
+        <div className="h-4 w-3/4 rounded bg-[var(--color-border)]" />
+        <div className="h-5 w-1/2 rounded bg-[var(--color-border)] mt-2" />
       </div>
     </article>
   );

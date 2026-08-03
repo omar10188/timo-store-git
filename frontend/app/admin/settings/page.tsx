@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, CheckCircle, Truck, AlertCircle } from "lucide-react";
 import { settingsAPI } from "@/lib/api";
-import { Switch } from "@/components/ui/switch"; // Assuming there is a standard shadcn-like switch, if not I will build a simple custom one.
 
 // I'll build a custom switch inline to ensure it works without external dependencies if Shadcn isn't fully installed
 const CustomSwitch = ({ checked, onChange, disabled = false }: { checked: boolean, onChange: (c: boolean) => void, disabled?: boolean }) => (

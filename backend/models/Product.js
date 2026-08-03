@@ -68,6 +68,11 @@ const productSchema = new mongoose.Schema(
     images: [{ type: String }],
     image: { type: String, default: "" },
     tags: [{ type: String, trim: true }],
+    gender: { type: String, enum: ["men", "women", "unisex"], default: "unisex", index: true },
+    accords: [{ type: String, trim: true }],
+    season: [{ type: String, enum: ["spring", "summer", "fall", "winter"] }],
+    intensity: { type: String, enum: ["light", "moderate", "strong"], default: "moderate" },
+    occasion: [{ type: String, trim: true }],
   },
   { timestamps: true }
 );

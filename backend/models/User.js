@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema(
   {
@@ -46,6 +48,10 @@ const userSchema = new mongoose.Schema(
     emailVerificationExpire: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    refreshToken: {
+      type: String,
+      select: false,
+    },
     sessions: [
       {
         tokenHash: { type: String, required: true },
@@ -79,9 +85,6 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
 
 // Virtual field for full address string
 userSchema.virtual("fullAddress").get(function () {
@@ -127,6 +130,14 @@ userSchema.methods.getResetPasswordToken = function () {
   this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   return resetToken;
+};
+
+// Generate and hash Refresh Token for DB storage
+userSchema.methods.setHashedRefreshToken = function (rawRefreshToken) {
+  this.refreshToken = crypto
+    .createHash("sha256")
+    .update(rawRefreshToken)
+    .digest("hex");
 };
 
 // Ensure virtuals are included in JSON output
